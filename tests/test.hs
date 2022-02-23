@@ -36,7 +36,14 @@ rowTests =
         "expandConstraint"
         ( \(MkTestConstraint (constraint, row_length)) ->
             let expandedConstraints = expandConstraint constraint row_length
-             in all (`matchesConstraint` constraint) expandedConstraints
+                predicates :: [Row -> QC.Property]
+                predicates =
+                  map
+                    (\predicate row -> QC.counterexample (show row) (predicate row))
+                    [ \row -> QC.property $ row `matchesConstraint` constraint,
+                      \row -> length row QC.=== row_length
+                    ]
+             in QC.conjoin [predicate row | predicate <- predicates, row <- expandedConstraints]
         )
     ]
 
@@ -49,7 +56,7 @@ instance QC.Arbitrary TestConstraint where
     where
       arbitraryTuple :: QC.Gen (RowConstraint, Int)
       arbitraryTuple = do
-        row_length <- QC.getPositive <$> QC.arbitrary
+        row_length <- QC.suchThat QC.arbitrary (>= 5)
         let numbers = QC.listOf1 QC.arbitrary
         constraint <- map QC.getPositive <$> numbers
         return (constraint, row_length)

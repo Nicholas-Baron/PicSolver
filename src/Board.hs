@@ -57,7 +57,7 @@ minRowLength row = sum row + gaps
 expandConstraint :: RowConstraint -> Int -> [Row]
 expandConstraint [] row_length = [replicate row_length Off]
 expandConstraint constraint row_length
-  | minRowLength constraint > toInteger row_length = []
+  | minRowLength constraint >= toInteger row_length = []
   | otherwise =
     let (block : rest) = constraint
         int_block = fromInteger block
