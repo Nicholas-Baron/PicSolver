@@ -1,6 +1,6 @@
 module Board where
 
-import Data.List (foldl')
+import Data.List (foldl', transpose)
 
 data Block
   = On
@@ -52,3 +52,14 @@ minRowLength row = sum row + gaps
   where
     gaps :: Integer
     gaps = toInteger $ length row - 1
+
+-- A board is a collection of rows
+
+data Board = Board
+  { rows :: [Row],
+    size :: Integer
+  }
+
+-- The column-oriented view of the board
+columns :: Board -> [Row]
+columns = transpose . rows
