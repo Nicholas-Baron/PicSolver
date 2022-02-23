@@ -23,6 +23,26 @@ rowTests =
           "toConstraint ignores the number of off or unknown blocks"
           (toConstraint [On, Off, On, On, On, Off, On])
           (toConstraint [On, Off, Unknown, On, On, On, Off, Off, On]),
+      HU.testCase "expandConstraint with blocks of 1" $
+        HU.assertEqual
+          "expandConstraint handles blocks of size 1"
+          [ [On, Off, Off, Off, Off],
+            [Off, On, Off, Off, Off],
+            [Off, Off, On, Off, Off],
+            [Off, Off, Off, On, Off],
+            [Off, Off, Off, Off, On]
+          ]
+          (expandConstraint [1] 5),
+      HU.testCase "expandConstraint base case" $
+        HU.assertEqual
+          "expandConstraint handles blocks of size 1"
+          (expandConstraint [1] 5)
+          [ [On, Off, Off, Off, Off],
+            [Off, On, Off, Off, Off],
+            [Off, Off, On, Off, Off],
+            [Off, Off, Off, On, Off],
+            [Off, Off, Off, Off, On]
+          ],
       QC.testProperty
         "at least 1 On"
         (\(MkTestRow row) -> On `elem` row),

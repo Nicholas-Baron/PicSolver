@@ -40,7 +40,11 @@ matchesConstraint row constraint =
     relativeOrderEq lhs rhs =
       null $
         foldl'
-          (\(currentBlock : restRow) block -> if currentBlock <= block then restRow else currentBlock : restRow)
+          ( \currentRow block ->
+              case currentRow of
+                (currentBlock : restRow) -> if currentBlock <= block then restRow else currentBlock : restRow
+                [] -> []
+          )
           lhs
           rhs
 
@@ -56,11 +60,14 @@ minRowLength row = sum row + gaps
 -- Expands the constraint to cover all possible rows of the given length
 expandConstraint :: RowConstraint -> Int -> [Row]
 expandConstraint [] row_length = [replicate row_length Off]
-expandConstraint constraint row_length
-  | minRowLength constraint >= toInteger row_length = []
+expandConstraint constraint@(block : rest) row_length
+  | minRowLength constraint > toInteger row_length = []
+  | null rest && block <= toInteger row_length =
+    map
+      (\index -> replicate index Off ++ [On] ++ replicate (row_length - (index + 1)) Off)
+      [0 .. (row_length - fromInteger block)]
   | otherwise =
-    let (block : rest) = constraint
-        int_block = fromInteger block
+    let int_block = fromInteger block
      in [replicate int_block On ++ Off : row | row <- expandConstraint rest (row_length - (int_block + 1))]
           ++ [Off : row | row <- expandConstraint constraint (row_length - 1)]
 
