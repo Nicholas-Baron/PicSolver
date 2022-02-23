@@ -31,8 +31,28 @@ rowTests =
         (\(MkTestRow row) -> matchesConstraint row (toConstraint row)),
       QC.testProperty
         "minRowLength"
-        (\(MkTestRow row) -> minRowLength (toConstraint row) <= toInteger (length row))
+        (\(MkTestRow row) -> minRowLength (toConstraint row) <= toInteger (length row)),
+      QC.testProperty
+        "expandConstraint"
+        ( \(MkTestConstraint (constraint, row_length)) ->
+            let expandedConstraints = expandConstraint constraint row_length
+             in all (`matchesConstraint` constraint) expandedConstraints
+        )
     ]
+
+newtype TestConstraint = MkTestConstraint (RowConstraint, Int)
+  deriving (Show, Eq)
+
+instance QC.Arbitrary TestConstraint where
+  arbitrary :: QC.Gen TestConstraint
+  arbitrary = MkTestConstraint <$> QC.suchThat arbitraryTuple (\(constraint, row_length) -> minRowLength constraint <= toInteger row_length)
+    where
+      arbitraryTuple :: QC.Gen (RowConstraint, Int)
+      arbitraryTuple = do
+        row_length <- QC.getPositive <$> QC.arbitrary
+        let numbers = QC.listOf1 QC.arbitrary
+        constraint <- map QC.getPositive <$> numbers
+        return (constraint, row_length)
 
 newtype TestRow = MkTestRow Row
   deriving (Show, Eq)

@@ -53,6 +53,17 @@ minRowLength row = sum row + gaps
     gaps :: Integer
     gaps = toInteger $ length row - 1
 
+-- Expands the constraint to cover all possible rows of the given length
+expandConstraint :: RowConstraint -> Int -> [Row]
+expandConstraint [] row_length = [replicate row_length Off]
+expandConstraint constraint row_length
+  | minRowLength constraint > toInteger row_length = []
+  | otherwise =
+    let (block : rest) = constraint
+        int_block = fromInteger block
+     in [replicate int_block On ++ Off : row | row <- expandConstraint rest (row_length - (int_block + 1))]
+          ++ [Off : row | row <- expandConstraint constraint (row_length - 1)]
+
 -- A board is a collection of rows
 
 data Board = Board
