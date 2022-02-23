@@ -5,6 +5,7 @@ import Test.Tasty
 import qualified Test.Tasty.HUnit as HU
 import qualified Test.Tasty.QuickCheck as QC
 
+main :: IO ()
 main = defaultMain tests
 
 tests :: TestTree
@@ -20,22 +21,25 @@ rowTests =
     [ HU.testCase "toConstraint" $
         HU.assertEqual
           "toConstraint ignores the number of off or unknown blocks"
-          (toConstraint $ MkRow [On, Off, On, On, On, Off, On])
-          (toConstraint $ MkRow [On, Off, Unknown, On, On, On, Off, Off, On]),
+          (toConstraint [On, Off, On, On, On, Off, On])
+          (toConstraint [On, Off, Unknown, On, On, On, Off, Off, On]),
       QC.testProperty
         "at least 1 On"
-        (\(MkRow contents) -> On `elem` contents),
+        (\(MkTestRow row) -> On `elem` row),
       QC.testProperty
         "matchesConstraint"
-        (\row@(MkRow contents) -> matchesConstraint row (toConstraint row)),
+        (\(MkTestRow row) -> matchesConstraint row (toConstraint row)),
       QC.testProperty
         "minRowLength"
-        (\row@(MkRow contents) -> minRowLength (toConstraint row) <= toInteger (length contents))
+        (\(MkTestRow row) -> minRowLength (toConstraint row) <= toInteger (length row))
     ]
 
-instance QC.Arbitrary Row where
-  arbitrary :: QC.Gen Row
-  arbitrary = MkRow <$> QC.suchThat arbitraryRow (elem On)
+newtype TestRow = MkTestRow Row
+  deriving (Show, Eq)
+
+instance QC.Arbitrary TestRow where
+  arbitrary :: QC.Gen TestRow
+  arbitrary = MkTestRow <$> QC.suchThat arbitraryRow (elem On)
     where
       arbitraryRow :: QC.Gen [Block]
       arbitraryRow = QC.listOf1 arbitraryBlock

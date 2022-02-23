@@ -10,11 +10,10 @@ data Block
 
 -- A row is a list of blocks and whether they are on, off, or unknown
 
-newtype Row = MkRow [Block]
-  deriving (Show, Eq)
+type Row = [Block]
 
 toConstraint :: Row -> RowConstraint
-toConstraint (MkRow row) = go [] row
+toConstraint = go []
   where
     go :: [Integer] -> [Block] -> RowConstraint
     -- The constraint is built in reverse order
