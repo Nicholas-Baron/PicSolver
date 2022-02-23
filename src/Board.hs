@@ -2,7 +2,7 @@
 
 module Board where
 
-import Data.List (foldl', sort)
+import Data.List (foldl')
 
 data Block
   = On
