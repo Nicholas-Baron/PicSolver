@@ -77,6 +77,7 @@ data Board = Board
   { rows :: [Row],
     size :: Int
   }
+  deriving (Show, Eq)
 
 fromRows :: [Row] -> Board
 fromRows in_rows =
@@ -92,3 +93,8 @@ columns = transpose . rows
 
 satisfiesConstraints :: Board -> [RowConstraint] -> Bool
 satisfiesConstraints Board {rows = boardRows} = and . zipWith matchesConstraint boardRows
+
+possibleSolutions :: [RowConstraint] -> Int -> [Board]
+possibleSolutions row_constraints board_size =
+  map (\board_rows -> Board {size = board_size, rows = board_rows}) $
+    mapM (`expandConstraint` board_size) row_constraints
