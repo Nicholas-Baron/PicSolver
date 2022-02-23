@@ -57,9 +57,20 @@ minRowLength row = sum row + gaps
 
 data Board = Board
   { rows :: [Row],
-    size :: Integer
+    size :: Int
   }
+
+fromRows :: [Row] -> Board
+fromRows in_rows =
+  let boardSize = maximum $ map length in_rows
+   in if all (\row -> length row == boardSize) in_rows
+        && length in_rows == boardSize
+        then Board {rows = in_rows, size = boardSize}
+        else error "Tried to create a non-square board"
 
 -- The column-oriented view of the board
 columns :: Board -> [Row]
 columns = transpose . rows
+
+satisfiesConstraints :: Board -> [RowConstraint] -> Bool
+satisfiesConstraints Board {rows = boardRows} = and . zipWith matchesConstraint boardRows
