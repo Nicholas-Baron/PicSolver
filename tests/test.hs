@@ -45,4 +45,4 @@ instance QC.Arbitrary TestRow where
       arbitraryRow = QC.listOf1 arbitraryBlock
 
       arbitraryBlock :: QC.Gen Block
-      arbitraryBlock = QC.elements [On, Off, Unknown]
+      arbitraryBlock = QC.arbitraryBoundedEnum

@@ -3,10 +3,10 @@ module Board where
 import Data.List (foldl', transpose)
 
 data Block
-  = On
+  = Unknown
   | Off
-  | Unknown
-  deriving (Show, Eq)
+  | On
+  deriving (Show, Eq, Enum, Bounded)
 
 -- A row is a list of blocks and whether they are on, off, or unknown
 
