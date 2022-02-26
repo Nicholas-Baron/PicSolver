@@ -1,11 +1,13 @@
 module Main where
 
 import Board
-import Debug.Trace (traceShow)
 
 main :: IO ()
 main = do
-  putStrLn "hello world"
+  putStr "Count of example boards: "
+  print $ length exampleBoards
+  putStr "Count of possible solution boards: "
+  print $ length exampleSolutions
 
 exampleRowConstraints :: [RowConstraint]
 exampleRowConstraints = [[4], [2, 1], [3], [1], [2]]
@@ -24,7 +26,6 @@ exampleSolutions =
   filter
     ( \board ->
         let input_columns = columns board
-         in traceShow input_columns $
-              all (uncurry matchesConstraint) $ zip input_columns exampleColConstraints
+         in all (uncurry matchesConstraint) $ zip input_columns exampleColConstraints
     )
     exampleBoards
