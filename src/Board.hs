@@ -29,10 +29,7 @@ toConstraint = go []
 --    2. none of its constraint blocks are longer than the longest in the constraint
 --    3. for each block in the row, the block in the row is <= a block in the same relative order in the constraint
 matchesConstraint :: Row -> RowConstraint -> Bool
-matchesConstraint row constraint =
-  (minRowLength rowConstraint <= minRowLength constraint)
-    && (maximum rowConstraint <= maximum constraint)
-    && relativeOrderEq rowConstraint constraint
+matchesConstraint row = relativeOrderEq rowConstraint
   where
     rowConstraint = toConstraint row
 
