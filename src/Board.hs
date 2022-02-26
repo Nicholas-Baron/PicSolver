@@ -60,9 +60,10 @@ expandConstraint [] row_length = [replicate row_length Off]
 expandConstraint constraint@(block : rest) row_length
   | minRowLength constraint > toInteger row_length = []
   | null rest && block <= toInteger row_length =
-    map
-      (\index -> replicate index Off ++ [On] ++ replicate (row_length - (index + 1)) Off)
-      [0 .. (row_length - fromInteger block)]
+    let int_block = fromInteger block
+     in map
+          (\index -> replicate index Off ++ replicate int_block On ++ replicate (row_length - (index + int_block)) Off)
+          [0 .. (row_length - int_block)]
   | otherwise =
     let int_block = fromInteger block
      in [replicate int_block On ++ Off : row | row <- expandConstraint rest (row_length - (int_block + 1))]

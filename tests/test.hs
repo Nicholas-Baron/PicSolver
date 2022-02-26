@@ -35,14 +35,11 @@ rowTests =
           (expandConstraint [1] 5),
       HU.testCase "expandConstraint base case" $
         HU.assertEqual
-          "expandConstraint handles blocks of size 1"
-          (expandConstraint [1] 5)
-          [ [On, Off, Off, Off, Off],
-            [Off, On, Off, Off, Off],
-            [Off, Off, On, Off, Off],
-            [Off, Off, Off, On, Off],
-            [Off, Off, Off, Off, On]
-          ],
+          "expandConstraint handles blocks of size 4"
+          [ [On, On, On, On, Off],
+            [Off, On, On, On, On]
+          ]
+          (expandConstraint [4] 5),
       HU.testCase "columns" $
         let input_rows = [[On, On, On], [Off, On, Off], [On, Off, Off]]
             board = Board {rows = input_rows, size = 3}
