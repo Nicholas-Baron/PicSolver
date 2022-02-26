@@ -43,6 +43,11 @@ rowTests =
             [Off, Off, Off, On, Off],
             [Off, Off, Off, Off, On]
           ],
+      HU.testCase "columns" $
+        let input_rows = [[On, On, On], [Off, On, Off], [On, Off, Off]]
+            board = Board {rows = input_rows, size = 3}
+            output_rows = [[On, Off, On], [On, On, Off], [On, Off, Off]]
+         in HU.assertEqual "columns transposes the board" output_rows (columns board),
       QC.testProperty
         "at least 1 On"
         (\(MkTestRow row) -> On `elem` row),
