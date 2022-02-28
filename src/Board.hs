@@ -3,7 +3,7 @@
 
 module Board where
 
-import Data.List (transpose)
+import Data.List (scanl', transpose)
 
 data Block
   = Unknown
@@ -18,17 +18,19 @@ type Row = [Block]
 toConstraint :: Row -> RowConstraint
 toConstraint =
   reduceList
-    . scanl
-      ( \ !constraint block -> case block of
-          On -> constraint + 1
-          _ -> 0
+    . scanl'
+      ( \ !constraint block ->
+          {-# SCC block_to_constraint_item #-}
+          case block of
+            On -> constraint + 1
+            _ -> 0
       )
       0
   where
     reduceList :: (Num a, Ord a) => [a] -> [a]
     reduceList [] = []
     reduceList [!x] = [x | x /= 0]
-    reduceList (x : rest@(y : _)) = if x <= y then reduceList rest else x : reduceList rest
+    reduceList (x : rest@(y : _)) = if x <= y then {-# SCC reduceList_true #-} reduceList rest else {-# SCC reduceList_false #-} x : reduceList rest
 
 -- A row matches its constraint if:
 --    1. it's constraint is <= the minRowLength of the constraint
@@ -91,5 +93,5 @@ satisfiesConstraints Board {rows = boardRows} = and . zipWith matchesConstraint 
 possibleSolutions2 :: [RowConstraint] -> [RowConstraint] -> Int -> [Board]
 possibleSolutions2 row_constraints col_constraints board_size =
   map (\board_rows -> Board {size = board_size, rows = board_rows}) $
-    filter (\(board_rows :: [Row]) -> {-# SCC board_column_filter #-} and $ zipWith matchesConstraint (transpose board_rows) col_constraints) $
+    filter (\board_rows -> and $ zipWith matchesConstraint (transpose board_rows) col_constraints) $
       mapM (`expandConstraint` board_size) row_constraints
