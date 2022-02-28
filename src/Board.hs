@@ -1,6 +1,9 @@
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Board where
 
-import Data.List (foldl', transpose)
+import Data.List (transpose)
 
 data Block
   = Unknown
@@ -15,14 +18,16 @@ type Row = [Block]
 toConstraint :: Row -> RowConstraint
 toConstraint = go []
   where
-    go :: [Integer] -> [Block] -> RowConstraint
+    go :: [Int] -> [Block] -> RowConstraint
     -- The constraint is built in reverse order
     go constraint [] = reverse $ filter (/= 0) constraint
     -- Starting a constraint
     go [] (block : blocks) = go [1 | block == On] blocks
-    go constraint@(x : rest) (block : blocks) = case block of
-      On -> go (x + 1 : rest) blocks
-      _ -> go (0 : constraint) blocks
+    go constraint@(x : rest) (block : blocks) =
+      {-# SCC case_to_constraint #-}
+      case block of
+        On -> go (x + 1 : rest) blocks
+        _ -> go (0 : constraint) blocks
 
 -- A row matches its constraint if:
 --    1. it's constraint is <= the minRowLength of the constraint
@@ -34,40 +39,34 @@ matchesConstraint row = relativeOrderEq rowConstraint
     rowConstraint = toConstraint row
 
     relativeOrderEq :: RowConstraint -> RowConstraint -> Bool
-    relativeOrderEq lhs rhs =
-      null $
-        foldl'
-          ( \currentRow block ->
-              case currentRow of
-                (currentBlock : restRow) -> if currentBlock <= block then restRow else currentBlock : restRow
-                [] -> []
-          )
-          lhs
-          rhs
+    relativeOrderEq [] _ = True
+    relativeOrderEq _ [] = False
+    relativeOrderEq (block : restRow) (constraint : restConstraint) =
+      {-# SCC cond_relativeOrderEq #-}
+      if block <= constraint
+        then relativeOrderEq restRow restConstraint
+        else relativeOrderEq (block : restRow) restConstraint
 
 -- A row constraint is a list of run length encoded "on" blocks
-type RowConstraint = [Integer]
+type RowConstraint = [Int]
 
-minRowLength :: RowConstraint -> Integer
+minRowLength :: RowConstraint -> Int
 minRowLength row = sum row + gaps
   where
-    gaps :: Integer
-    gaps = toInteger $ length row - 1
+    gaps = length row - 1
 
 -- Expands the constraint to cover all possible rows of the given length
 expandConstraint :: RowConstraint -> Int -> [Row]
-expandConstraint [] row_length = [replicate row_length Off]
-expandConstraint constraint@(block : rest) row_length
-  | minRowLength constraint > toInteger row_length = []
-  | null rest && block <= toInteger row_length =
-    let int_block = fromInteger block
-     in map
-          (\index -> replicate index Off ++ replicate int_block On ++ replicate (row_length - (index + int_block)) Off)
-          [0 .. (row_length - int_block)]
+expandConstraint [] !row_length = [replicate row_length Off]
+expandConstraint constraint@(block : rest) !row_length
+  | minRowLength constraint > row_length = []
+  | null rest && block <= row_length =
+    map
+      (\index -> replicate index Off ++ replicate block On ++ replicate (row_length - (index + block)) Off)
+      [0 .. (row_length - block)]
   | otherwise =
-    let int_block = fromInteger block
-     in [replicate int_block On ++ Off : row | row <- expandConstraint rest (row_length - (int_block + 1))]
-          ++ [Off : row | row <- expandConstraint constraint (row_length - 1)]
+    [replicate block On ++ Off : row | row <- expandConstraint rest (row_length - (block + 1))]
+      ++ [Off : row | row <- expandConstraint constraint (row_length - 1)]
 
 -- A board is a collection of rows
 
@@ -92,7 +91,8 @@ columns = transpose . rows
 satisfiesConstraints :: Board -> [RowConstraint] -> Bool
 satisfiesConstraints Board {rows = boardRows} = and . zipWith matchesConstraint boardRows
 
-possibleSolutions :: [RowConstraint] -> Int -> [Board]
-possibleSolutions row_constraints board_size =
+possibleSolutions2 :: [RowConstraint] -> [RowConstraint] -> Int -> [Board]
+possibleSolutions2 row_constraints col_constraints board_size =
   map (\board_rows -> Board {size = board_size, rows = board_rows}) $
-    mapM (`expandConstraint` board_size) row_constraints
+    filter (\(board_rows :: [Row]) -> {-# SCC board_column_filter #-} and $ zipWith matchesConstraint (transpose board_rows) col_constraints) $
+      mapM (`expandConstraint` board_size) row_constraints
