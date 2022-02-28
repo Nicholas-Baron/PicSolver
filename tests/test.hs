@@ -46,6 +46,9 @@ rowTests =
             output_rows = [[On, Off, On], [On, On, Off], [On, Off, Off]]
          in HU.assertEqual "columns transposes the board" output_rows (columns board),
       QC.testProperty
+        "no zeros in toConstraint"
+        (\(MkTestRow row) -> notElem 0 $ toConstraint row),
+      QC.testProperty
         "at least 1 On"
         (\(MkTestRow row) -> On `elem` row),
       QC.testProperty
@@ -53,7 +56,7 @@ rowTests =
         (\(MkTestRow row) -> matchesConstraint row (toConstraint row)),
       QC.testProperty
         "minRowLength"
-        (\(MkTestRow row) -> minRowLength (toConstraint row) <= toInteger (length row)),
+        (\(MkTestRow row) -> minRowLength (toConstraint row) <= length row),
       QC.testProperty
         "expandConstraint"
         ( \(MkTestConstraint (constraint, row_length)) ->
@@ -61,7 +64,7 @@ rowTests =
                 predicates :: [Row -> QC.Property]
                 predicates =
                   map
-                    (\predicate row -> QC.counterexample (show row) (predicate row))
+                    (\predicate row -> QC.counterexample (show (row, toConstraint row)) (predicate row))
                     [ \row -> QC.property $ row `matchesConstraint` constraint,
                       \row -> length row QC.=== row_length
                     ]
@@ -74,7 +77,7 @@ newtype TestConstraint = MkTestConstraint (RowConstraint, Int)
 
 instance QC.Arbitrary TestConstraint where
   arbitrary :: QC.Gen TestConstraint
-  arbitrary = MkTestConstraint <$> QC.suchThat arbitraryTuple (\(constraint, row_length) -> minRowLength constraint <= toInteger row_length)
+  arbitrary = MkTestConstraint <$> QC.suchThat arbitraryTuple (\(constraint, row_length) -> minRowLength constraint <= row_length)
     where
       arbitraryTuple :: QC.Gen (RowConstraint, Int)
       arbitraryTuple = do
