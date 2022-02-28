@@ -16,36 +16,33 @@ data Block
 type Row = [Block]
 
 toConstraint :: Row -> RowConstraint
-toConstraint = go []
+toConstraint =
+  reduceList
+    . scanl
+      ( \ !constraint block -> case block of
+          On -> constraint + 1
+          _ -> 0
+      )
+      0
   where
-    go :: [Int] -> [Block] -> RowConstraint
-    -- The constraint is built in reverse order
-    go constraint [] = reverse $ filter (/= 0) constraint
-    -- Starting a constraint
-    go [] (block : blocks) = go [1 | block == On] blocks
-    go constraint@(x : rest) (block : blocks) =
-      {-# SCC case_to_constraint #-}
-      case block of
-        On -> go (x + 1 : rest) blocks
-        _ -> go (0 : constraint) blocks
+    reduceList :: (Num a, Ord a) => [a] -> [a]
+    reduceList [] = []
+    reduceList [!x] = [x | x /= 0]
+    reduceList (x : rest@(y : _)) = if x <= y then reduceList rest else x : reduceList rest
 
 -- A row matches its constraint if:
 --    1. it's constraint is <= the minRowLength of the constraint
 --    2. none of its constraint blocks are longer than the longest in the constraint
 --    3. for each block in the row, the block in the row is <= a block in the same relative order in the constraint
 matchesConstraint :: Row -> RowConstraint -> Bool
-matchesConstraint row = relativeOrderEq rowConstraint
+matchesConstraint row = relativeOrderEq (toConstraint row)
   where
-    rowConstraint = toConstraint row
-
     relativeOrderEq :: RowConstraint -> RowConstraint -> Bool
     relativeOrderEq [] _ = True
     relativeOrderEq _ [] = False
-    relativeOrderEq (block : restRow) (constraint : restConstraint) =
+    relativeOrderEq in_row@(block : restRow) (constraint : restConstraint) =
       {-# SCC cond_relativeOrderEq #-}
-      if block <= constraint
-        then relativeOrderEq restRow restConstraint
-        else relativeOrderEq (block : restRow) restConstraint
+      relativeOrderEq (if block <= constraint then restRow else in_row) restConstraint
 
 -- A row constraint is a list of run length encoded "on" blocks
 type RowConstraint = [Int]
