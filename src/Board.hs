@@ -3,29 +3,46 @@
 
 module Board where
 
+import qualified Data.BitVector as BV
 import Data.List (scanl', transpose)
 
 data Block
-  = Unknown
-  | Off
+  = Off
   | On
   deriving (Show, Eq, Enum, Bounded)
 
+fromRow :: Row -> [Block]
+fromRow (MkRow row) = map (\block -> if block then On else Off) $ BV.toBits row
+
+toRow :: [Block] -> Row
+toRow = MkRow . BV.fromBits . map (== On)
+
 -- A row is a list of blocks and whether they are on, off, or unknown
 
-type Row = [Block]
+newtype Row = MkRow BV.BV
+  deriving (Show, Eq)
+
+unrow :: Row -> BV.BV
+unrow (MkRow bv) = bv
+
+columns :: [Row] -> [Row]
+columns =
+  map (MkRow . BV.fromBits)
+    . transpose
+    . map (BV.toBits . unrow)
 
 toConstraint :: Row -> RowConstraint
-toConstraint =
-  reduceList
-    . scanl'
+toConstraint (MkRow row) =
+  reduceList $
+    scanl'
       ( \ !constraint block ->
           {-# SCC block_to_constraint_item #-}
-          case block of
-            On -> constraint + 1
-            _ -> 0
+          if block
+            then constraint + 1
+            else 0
       )
       0
+      $ BV.toBits row
   where
     reduceList :: (Num a, Ord a) => [a] -> [a]
     reduceList [] = []
@@ -37,14 +54,7 @@ toConstraint =
 --    2. none of its constraint blocks are longer than the longest in the constraint
 --    3. for each block in the row, the block in the row is <= a block in the same relative order in the constraint
 matchesConstraint :: Row -> RowConstraint -> Bool
-matchesConstraint row = relativeOrderEq (toConstraint row)
-  where
-    relativeOrderEq :: RowConstraint -> RowConstraint -> Bool
-    relativeOrderEq [] _ = True
-    relativeOrderEq _ [] = False
-    relativeOrderEq in_row@(block : restRow) (constraint : restConstraint) =
-      {-# SCC cond_relativeOrderEq #-}
-      relativeOrderEq (if block <= constraint then restRow else in_row) restConstraint
+matchesConstraint row constraint = row `elem` expandConstraint constraint (BV.size $ unrow row)
 
 -- A row constraint is a list of run length encoded "on" blocks
 type RowConstraint = [Int]
@@ -56,16 +66,20 @@ minRowLength row = sum row + gaps
 
 -- Expands the constraint to cover all possible rows of the given length
 expandConstraint :: RowConstraint -> Int -> [Row]
-expandConstraint [] !row_length = [replicate row_length Off]
+expandConstraint [] !row_length = {-# SCC row_cap #-} map MkRow [BV.zeros row_length]
 expandConstraint constraint@(block : rest) !row_length
   | minRowLength constraint > row_length = []
   | null rest && block <= row_length =
+    {-# SCC last_block #-}
     map
-      (\index -> replicate index Off ++ replicate block On ++ replicate (row_length - (index + block)) Off)
+      (\index -> MkRow $ BV.zeros index BV.# BV.ones block BV.# BV.zeros (row_length - (index + block)))
       [0 .. (row_length - block)]
   | otherwise =
-    [replicate block On ++ Off : row | row <- expandConstraint rest (row_length - (block + 1))]
-      ++ [Off : row | row <- expandConstraint constraint (row_length - 1)]
+    {-# SCC recurse_rows #-}
+    [ MkRow (BV.ones block BV.# BV.zeroExtend 1 row)
+      | MkRow row <- expandConstraint rest (row_length - (block + 1))
+    ]
+      ++ [MkRow (BV.zeroExtend 1 row) | MkRow row <- expandConstraint constraint (row_length - 1)]
 
 -- A board is a collection of rows
 
@@ -77,21 +91,21 @@ data Board = Board
 
 fromRows :: [Row] -> Board
 fromRows in_rows =
-  let boardSize = maximum $ map length in_rows
-   in if all (\row -> length row == boardSize) in_rows
+  let boardSize = maximum $ map (BV.size . unrow) in_rows
+   in if all (\(MkRow row) -> BV.size row == boardSize) in_rows
         && length in_rows == boardSize
         then Board {rows = in_rows, size = boardSize}
         else error "Tried to create a non-square board"
 
 -- The column-oriented view of the board
-columns :: Board -> [Row]
-columns = transpose . rows
+boardColumns :: Board -> [Row]
+boardColumns = columns . rows
 
 satisfiesConstraints :: Board -> [RowConstraint] -> Bool
 satisfiesConstraints Board {rows = boardRows} = and . zipWith matchesConstraint boardRows
 
 possibleSolutions2 :: [RowConstraint] -> [RowConstraint] -> Int -> [Board]
 possibleSolutions2 row_constraints col_constraints board_size =
-  map (\board_rows -> Board {size = board_size, rows = board_rows}) $
-    filter (\board_rows -> and $ zipWith matchesConstraint (transpose board_rows) col_constraints) $
+  map (\(board_rows :: [Row]) -> Board {size = board_size, rows = board_rows}) $
+    filter (\(board_rows :: [Row]) -> and $ zipWith matchesConstraint (columns board_rows) col_constraints) $
       mapM (`expandConstraint` board_size) row_constraints
