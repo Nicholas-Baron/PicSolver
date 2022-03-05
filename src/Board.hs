@@ -54,7 +54,7 @@ toConstraint (MkRow row) =
 --    2. none of its constraint blocks are longer than the longest in the constraint
 --    3. for each block in the row, the block in the row is <= a block in the same relative order in the constraint
 matchesConstraint :: Row -> RowConstraint -> Bool
-matchesConstraint row constraint = row `elem` expandConstraint constraint (BV.size $ unrow row)
+matchesConstraint row constraint = toConstraint row == constraint
 
 -- A row constraint is a list of run length encoded "on" blocks
 type RowConstraint = [Int]
