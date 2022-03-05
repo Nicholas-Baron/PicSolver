@@ -75,11 +75,10 @@ expandConstraint constraint@(block : rest) !row_length
       (\index -> MkRow $ BV.zeros index BV.# BV.ones block BV.# BV.zeros (row_length - (index + block)))
       [0 .. (row_length - block)]
   | otherwise =
-    {-# SCC recurse_rows #-}
-    [ MkRow (BV.ones block BV.# BV.zeroExtend 1 row)
-      | MkRow row <- expandConstraint rest (row_length - (block + 1))
-    ]
-      ++ [MkRow (BV.zeroExtend 1 row) | MkRow row <- expandConstraint constraint (row_length - 1)]
+    let addBlank = BV.zeroExtend (1 :: Int)
+        rows_with_block = map (MkRow . BV.append (BV.ones block) . addBlank . unrow) $ expandConstraint rest (row_length - (block + 1))
+        rows_without_block = [MkRow (addBlank row) | MkRow row <- expandConstraint constraint (row_length - 1)]
+     in rows_with_block ++ rows_without_block
 
 -- A board is a collection of rows
 
