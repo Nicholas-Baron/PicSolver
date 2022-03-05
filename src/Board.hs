@@ -90,10 +90,11 @@ data Board = Board
 
 fromRows :: [Row] -> Board
 fromRows in_rows =
-  let boardSize = maximum $ map (BV.size . unrow) in_rows
-   in if all (\(MkRow row) -> BV.size row == boardSize) in_rows
-        && length in_rows == boardSize
-        then Board {rows = BV.join $ map unrow in_rows, size = boardSize}
+  let raw_rows = map unrow in_rows
+      boardSize = maximum $ map BV.size raw_rows
+   in if all (\row -> BV.size row == boardSize) raw_rows
+        && length raw_rows == boardSize
+        then Board {rows = BV.join raw_rows, size = boardSize}
         else error "Tried to create a non-square board"
 
 toRows :: Board -> [Row]
