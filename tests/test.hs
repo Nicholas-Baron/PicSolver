@@ -49,9 +49,9 @@ rowTests =
           (expandConstraint [4] 5),
       HU.testCase "columns" $
         let input_rows = map toRow [[On, On, On], [Off, On, Off], [On, Off, Off]]
-            board = Board {rows = input_rows, size = 3}
+            board = fromRows input_rows
             output_rows = map toRow [[On, Off, On], [On, On, Off], [On, Off, Off]]
-         in HU.assertEqual "columns transposes the board" output_rows (boardColumns board),
+         in HU.assertEqual "columns transposes the board" output_rows (toColumns board),
       QC.testProperty
         "no zeros in toConstraint"
         (\(MkTestRow row) -> notElem 0 $ toConstraint row),

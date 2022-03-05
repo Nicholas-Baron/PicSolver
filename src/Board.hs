@@ -84,7 +84,7 @@ expandConstraint constraint@(block : rest) !row_length
 -- A board is a collection of rows
 
 data Board = Board
-  { rows :: [Row],
+  { rows :: BV.BV,
     size :: Int
   }
   deriving (Show, Eq)
@@ -94,18 +94,21 @@ fromRows in_rows =
   let boardSize = maximum $ map (BV.size . unrow) in_rows
    in if all (\(MkRow row) -> BV.size row == boardSize) in_rows
         && length in_rows == boardSize
-        then Board {rows = in_rows, size = boardSize}
+        then Board {rows = BV.join $ map unrow in_rows, size = boardSize}
         else error "Tried to create a non-square board"
 
+toRows :: Board -> [Row]
+toRows Board {rows = board_rows, size = board_size} = map MkRow $ BV.group board_size board_rows
+
 -- The column-oriented view of the board
-boardColumns :: Board -> [Row]
-boardColumns = columns . rows
+toColumns :: Board -> [Row]
+toColumns = columns . toRows
 
 satisfiesConstraints :: Board -> [RowConstraint] -> Bool
-satisfiesConstraints Board {rows = boardRows} = and . zipWith matchesConstraint boardRows
+satisfiesConstraints board = and . zipWith matchesConstraint (toRows board)
 
 possibleSolutions2 :: [RowConstraint] -> [RowConstraint] -> Int -> [Board]
 possibleSolutions2 row_constraints col_constraints board_size =
-  map (\(board_rows :: [Row]) -> Board {size = board_size, rows = board_rows}) $
+  map fromRows $
     filter (\(board_rows :: [Row]) -> and $ zipWith matchesConstraint (columns board_rows) col_constraints) $
       mapM (`expandConstraint` board_size) row_constraints
