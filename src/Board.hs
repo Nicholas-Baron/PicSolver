@@ -27,9 +27,9 @@ unrow (MkRow bv) = bv
 
 columns :: [Row] -> [Row]
 columns =
-  map (MkRow . BV.fromBits)
+  map ({-# SCC buildRows #-} MkRow . BV.join)
     . transpose
-    . map (BV.toBits . unrow)
+    . map ({-# SCC unrows #-} BV.group 1 . unrow)
 
 toConstraint :: Row -> RowConstraint
 toConstraint (MkRow row) =

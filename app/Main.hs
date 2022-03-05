@@ -4,8 +4,8 @@ import Board
 
 main :: IO ()
 main = do
-  let exampleSolutions = possibleSolutions2 rowConstraints columnConstraints exampleBoardSize
-  mapM_ (print . rows) exampleSolutions
+  let exampleSolutions2 = map columns $ mapM (`expandConstraint` exampleBoardSize) columnConstraints
+  mapM_ print $ filter (\board -> satisfiesConstraints (fromRows board) rowConstraints) exampleSolutions2
 
 {-
 exampleBoardSize :: Int
