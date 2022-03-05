@@ -10,10 +10,18 @@ main :: IO ()
 main = defaultMain tests
 
 tests :: TestTree
-tests = testGroup "Tests" [boardTests]
+tests = testGroup "Tests" [boardTests, rowTests]
 
 boardTests :: TestTree
-boardTests = testGroup "Board Tests" [rowTests]
+boardTests =
+  testGroup
+    "Board Tests"
+    [ HU.testCase "toColumns" $
+        let input_rows = map toRow [[On, On, On], [Off, On, Off], [On, Off, Off]]
+            board = fromRows input_rows
+            output_rows = map toRow [[On, Off, On], [On, On, Off], [On, Off, Off]]
+         in HU.assertEqual "columns transposes the board" output_rows (toColumns board)
+    ]
 
 rowTests :: TestTree
 rowTests =
@@ -24,7 +32,26 @@ rowTests =
           "toConstraint ignores the number of off or unknown blocks"
           (toConstraint $ toRow [On, Off, On, On, On, Off, On])
           (toConstraint $ toRow [On, Off, Off, On, On, On, Off, Off, On]),
-      HU.testCase "expandConstraint with blocks of 1" $
+      QC.testProperty
+        "no zeros in toConstraint"
+        (\(MkTestRow row) -> notElem 0 $ toConstraint row),
+      QC.testProperty
+        "at least 1 On"
+        (\(MkTestRow (MkRow row)) -> BV.signumI row /= 0),
+      QC.testProperty
+        "matchesConstraint"
+        (\(MkTestRow row) -> matchesConstraint row (toConstraint row)),
+      QC.testProperty
+        "minRowLength"
+        (\(MkTestRow row) -> minRowLength (toConstraint row) <= BV.size (unrow row)),
+      expandConstraintProperties
+    ]
+
+expandConstraintProperties :: TestTree
+expandConstraintProperties =
+  testGroup
+    "expandConstraint"
+    [ HU.testCase "expandConstraint with blocks of 1" $
         HU.assertEqual
           "expandConstraint handles blocks of size 1"
           ( map
@@ -47,25 +74,8 @@ rowTests =
               ]
           )
           (expandConstraint [4] 5),
-      HU.testCase "columns" $
-        let input_rows = map toRow [[On, On, On], [Off, On, Off], [On, Off, Off]]
-            board = fromRows input_rows
-            output_rows = map toRow [[On, Off, On], [On, On, Off], [On, Off, Off]]
-         in HU.assertEqual "columns transposes the board" output_rows (toColumns board),
       QC.testProperty
-        "no zeros in toConstraint"
-        (\(MkTestRow row) -> notElem 0 $ toConstraint row),
-      QC.testProperty
-        "at least 1 On"
-        (\(MkTestRow (MkRow row)) -> BV.signumI row /= 0),
-      QC.testProperty
-        "matchesConstraint"
-        (\(MkTestRow row) -> matchesConstraint row (toConstraint row)),
-      QC.testProperty
-        "minRowLength"
-        (\(MkTestRow row) -> minRowLength (toConstraint row) <= (BV.size $ unrow row)),
-      QC.testProperty
-        "expandConstraint"
+        "all rows match the constraint they expanded from"
         ( \(MkTestConstraint (constraint, row_length)) ->
             let expandedConstraints = expandConstraint constraint row_length
                 predicates :: [Row -> QC.Property]
@@ -98,7 +108,7 @@ newtype TestRow = MkTestRow Row
 
 instance QC.Arbitrary TestRow where
   arbitrary :: QC.Gen TestRow
-  arbitrary = MkTestRow <$> toRow <$> QC.suchThat arbitraryRow (elem On)
+  arbitrary = MkTestRow . toRow <$> QC.suchThat arbitraryRow (elem On)
     where
       arbitraryRow :: QC.Gen [Block]
       arbitraryRow = QC.listOf1 arbitraryBlock
