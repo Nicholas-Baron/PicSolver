@@ -3,6 +3,7 @@
 
 module Board where
 
+import Control.Parallel.Strategies (parMap, rdeepseq, rpar)
 import qualified Data.BitVector as BV
 import Data.List (scanl', transpose)
 
@@ -20,16 +21,19 @@ toRow = MkRow . BV.fromBits . map (== On)
 -- A row is a list of blocks and whether they are on, off, or unknown
 
 newtype Row = MkRow BV.BV
-  deriving (Show, Eq)
+  deriving (Eq)
+
+instance Show Row where
+  show = show . fromRow
 
 unrow :: Row -> BV.BV
 unrow (MkRow bv) = bv
 
 columns :: [Row] -> [Row]
 columns =
-  map ({-# SCC buildRows #-} MkRow . BV.join)
+  parMap rpar ({-# SCC buildRows #-} MkRow . BV.join)
     . transpose
-    . map ({-# SCC unrows #-} BV.group 1 . unrow)
+    . parMap rpar ({-# SCC unrows #-} BV.group (1 :: Int) . unrow)
 
 toConstraint :: Row -> RowConstraint
 toConstraint (MkRow row) =
@@ -76,7 +80,7 @@ expandConstraint constraint@(block : rest) !row_length
       [0 .. (row_length - block)]
   | otherwise =
     let addBlank = BV.zeroExtend (1 :: Int)
-        rows_with_block = map (MkRow . BV.append (BV.ones block) . addBlank . unrow) $ expandConstraint rest (row_length - (block + 1))
+        rows_with_block = parMap rpar (MkRow . BV.append (BV.ones block) . addBlank . unrow) $ expandConstraint rest (row_length - (block + 1))
         rows_without_block = [MkRow (addBlank row) | MkRow row <- expandConstraint constraint (row_length - 1)]
      in rows_with_block ++ rows_without_block
 
@@ -86,16 +90,16 @@ data Board = Board
   { rows :: BV.BV,
     size :: Int
   }
-  deriving (Show, Eq)
+  deriving (Show, Eq, Ord)
 
 fromRows :: [Row] -> Board
 fromRows in_rows =
-  let raw_rows = map unrow in_rows
-      boardSize = maximum $ map BV.size raw_rows
+  let raw_rows = parMap rpar unrow in_rows
+      boardSize = maximum $ parMap rdeepseq BV.size raw_rows
    in if all (\row -> BV.size row == boardSize) raw_rows
         && length raw_rows == boardSize
         then Board {rows = BV.join raw_rows, size = boardSize}
-        else error "Tried to create a non-square board"
+        else error ("Tried to create a non-square board with dimensions " ++ show (map BV.size raw_rows))
 
 toRows :: Board -> [Row]
 toRows Board {rows = board_rows, size = board_size} = map MkRow $ BV.group board_size board_rows
@@ -103,6 +107,9 @@ toRows Board {rows = board_rows, size = board_size} = map MkRow $ BV.group board
 -- The column-oriented view of the board
 toColumns :: Board -> [Row]
 toColumns = columns . toRows
+
+boardFlip :: Board -> Board
+boardFlip = fromRows . toColumns
 
 satisfiesConstraints :: Board -> [RowConstraint] -> Bool
 satisfiesConstraints board = and . zipWith matchesConstraint (toRows board)

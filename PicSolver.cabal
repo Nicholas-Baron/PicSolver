@@ -18,6 +18,7 @@ library
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5
                      , bv >= 0.5
+                     , parallel >= 3.1
   exposed-modules:     Board
   ghc-options:         -Wall -O2 -fprof-auto-calls -fllvm
 
@@ -26,8 +27,10 @@ executable pic_solver
   hs-source-dirs:      app
   main-is:             Main.hs
   default-language:    Haskell2010
-  ghc-options:         -Wall -O2 -rtsopts
+  ghc-options:         -Wall -O2 -rtsopts -threaded -fprof-auto-calls
   build-depends:       base >= 4.7 && < 5
+                     , parallel >= 3.1
+                     , containers >= 0.6
                      , PicSolver
 
 

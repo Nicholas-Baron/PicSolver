@@ -1,11 +1,40 @@
 module Main where
 
 import Board
+import Control.Parallel.Strategies (parMap, rpar)
+import qualified Data.Set as Set
 
 main :: IO ()
 main = do
-  let exampleSolutions2 = map (fromRows . columns) (mapM (`expandConstraint` exampleBoardSize) columnConstraints)
-  mapM_ print $ filter (`satisfiesConstraints` rowConstraints) exampleSolutions2
+  let expandedRows = parMap rpar (`expandConstraint` exampleBoardSize) rowConstraints
+  let expandedCols = parMap rpar (`expandConstraint` exampleBoardSize) columnConstraints
+
+  let possibleRows = sequence expandedRows
+  let possibleCols = sequence expandedCols
+
+  let possibleRowBoards = map fromRows possibleRows
+  let possibleColBoards = map (boardFlip . fromRows) possibleCols
+
+  let possibleRowCounts = product $ map length expandedRows
+  let possibleColCounts = product $ map length expandedCols
+
+  putStrLn "Total Row Combinations"
+  print possibleRowCounts
+
+  putStrLn "Total Column Combinations"
+  print possibleColCounts
+
+  putStrLn "Int Max Bound"
+  print (maxBound :: Int)
+
+  let (smallerList, largerSet) =
+        if length expandedRows < length expandedCols
+          then (possibleRowBoards, Set.fromList possibleColBoards)
+          else (possibleColBoards, Set.fromList possibleRowBoards)
+
+  print $ filter (`Set.member` largerSet) smallerList
+
+  print "Done"
 
 {-
 exampleBoardSize :: Int
