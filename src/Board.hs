@@ -24,7 +24,7 @@ newtype Row = MkRow BV.BV
   deriving (Eq)
 
 instance Show Row where
-  show = show . fromRow
+  show (MkRow row) = BV.showBin row
 
 unrow :: Row -> BV.BV
 unrow (MkRow bv) = bv

@@ -3,6 +3,7 @@ module Main where
 import Board
 import Control.Parallel.Strategies (parMap, rpar)
 import qualified Data.Set as Set
+import Debug.Trace (traceShow)
 
 main :: IO ()
 main = do
@@ -13,15 +14,17 @@ main = do
   let possibleCols = sequence expandedCols
 
   let possibleRowBoards = map fromRows possibleRows
-  let possibleColBoards = map (boardFlip . fromRows) possibleCols
+  let possibleColBoards = parMap rpar (boardFlip . fromRows) possibleCols
 
   let possibleRowCounts = product $ map length expandedRows
   let possibleColCounts = product $ map length expandedCols
 
   putStrLn "Total Row Combinations"
+  print $ map length expandedRows
   print possibleRowCounts
 
   putStrLn "Total Column Combinations"
+  print $ map length expandedCols
   print possibleColCounts
 
   putStrLn "Int Max Bound"
@@ -31,8 +34,10 @@ main = do
         if length expandedRows < length expandedCols
           then (possibleRowBoards, Set.fromList possibleColBoards)
           else (possibleColBoards, Set.fromList possibleRowBoards)
+  
+  putStrLn "Computing boards..."
 
-  print $ filter (`Set.member` largerSet) smallerList
+  print $ map snd $ filter fst $ parMap rpar (\board -> (board `Set.member` largerSet, board)) $ zipWith traceShow [(1 :: Int) ..] smallerList
 
   print "Done"
 
