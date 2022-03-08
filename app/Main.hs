@@ -1,15 +1,17 @@
 module Main where
 
+import Control.Applicative ((<|>))
+import Data.List (transpose)
 import Row
 import Util (commonElements)
 
 main :: IO ()
 main = do
   let expandedRows = map (`expandConstraint` exampleBoardSize) rowConstraints
-  let expandedCols = map (`expandConstraint` exampleBoardSize) columnConstraints
+      expandedCols = map (`expandConstraint` exampleBoardSize) columnConstraints
 
   let possibleRowCounts = product $ map length expandedRows
-  let possibleColCounts = product $ map length expandedCols
+      possibleColCounts = product $ map length expandedCols
 
   putStrLn "Total Row Combinations"
   print $ map length expandedRows
@@ -19,11 +21,26 @@ main = do
   print $ map length expandedCols
   print possibleColCounts
 
-  putStrLn "Common Elements in Rows"
-  mapM_ (print . commonElements . map unrow) expandedRows
+  let commonRowElems = map (commonElements . map unrow) expandedRows
+      commonColElems = map (commonElements . map unrow) expandedCols
 
-  putStrLn "Common Elements in Columns"
-  mapM_ (print . commonElements . map unrow) expandedCols
+  let commonRowItems = zipWith (\(row : _) to_take -> takeFromList to_take (unrow row)) expandedRows commonRowElems
+      commonColItems = transpose $ zipWith (\(row : _) to_take -> takeFromList to_take (unrow row)) expandedCols commonColElems
+
+  putStrLn "Common Elements in Rows"
+  mapM_ print commonRowItems
+
+  putStrLn "Common Elements in Cols"
+  mapM_ print commonColItems
+
+  putStrLn "Total Known After 1 step"
+  mapM_ print $ elementUnion commonColItems commonRowItems
+
+takeFromList :: [Bool] -> [a] -> [Maybe a]
+takeFromList = zipWith (\t val -> if t then Just val else Nothing)
+
+elementUnion :: [[Maybe a]] -> [[Maybe a]] -> [[Maybe a]]
+elementUnion = zipWith (zipWith (<|>))
 
 {-
 exampleBoardSize :: Int
