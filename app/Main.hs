@@ -1,9 +1,8 @@
 module Main where
 
-import Control.Applicative ((<|>))
 import Data.List (transpose)
 import Row
-import Util (commonElements)
+import Util
 
 main :: IO ()
 main = do
@@ -34,13 +33,7 @@ main = do
   mapM_ print commonColItems
 
   putStrLn "Total Known After 1 step"
-  mapM_ print $ elementUnion commonColItems commonRowItems
-
-takeFromList :: [Bool] -> [a] -> [Maybe a]
-takeFromList = zipWith (\t val -> if t then Just val else Nothing)
-
-elementUnion :: [[Maybe a]] -> [[Maybe a]] -> [[Maybe a]]
-elementUnion = zipWith (zipWith (<|>))
+  mapM_ print $ matrixUnion commonColItems commonRowItems
 
 {-
 exampleBoardSize :: Int

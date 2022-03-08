@@ -1,11 +1,12 @@
 {-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 import Row
 import Test.Tasty
 import qualified Test.Tasty.HUnit as HU
 import qualified Test.Tasty.QuickCheck as QC
-import Util (commonElements)
+import Util (commonElements, takeFromList)
 
 main :: IO ()
 main = defaultMain tests
@@ -82,6 +83,36 @@ utilTests =
         (\(list :: [Int]) -> and $ commonElements $ replicate 5 list),
       HU.testCase
         "commonElements of [[1,2,3], [3,2,1], [2,2,2]] is [False,True,False]"
-        ( commonElements [[1, 2, 3], [3, 2, 1], [2, 2, 2]] HU.@?= [False, True, False]
+        (commonElements [[1, 2, 3], [3, 2, 1], [2, 2, 2]] HU.@?= [False, True, False]),
+      QC.testProperty
+        "takeFromList will have the length of the shorter list"
+        ( \(list :: [Int], mask) ->
+            let expectedLength = min (length list) (length mask)
+             in length (takeFromList mask list) == expectedLength
+        ),
+      QC.testProperty
+        "takeFromList will put Just in all places with True in the mask"
+        ( \(list :: [Int], mask) ->
+            QC.conjoin $
+              zipWith
+                ( \b -> \case
+                    Nothing -> not b
+                    Just _ -> b
+                )
+                mask
+                $ takeFromList mask list
+        ),
+      QC.testProperty
+        "takeFromList will put the original value in the Just"
+        ( \(list :: [Int], mask) ->
+            QC.conjoin $
+              zipWith
+                ( \item ->
+                    \case
+                      Nothing -> True
+                      Just x -> x == item
+                )
+                list
+                $ takeFromList mask list
         )
     ]
