@@ -1,20 +1,12 @@
 module Main where
 
-import Board
-import Control.Parallel.Strategies (parMap, rpar)
-import qualified Data.Set as Set
-import Debug.Trace (traceShow)
+import Row
+import Util (commonElements)
 
 main :: IO ()
 main = do
-  let expandedRows = parMap rpar (`expandConstraint` exampleBoardSize) rowConstraints
-  let expandedCols = parMap rpar (`expandConstraint` exampleBoardSize) columnConstraints
-
-  let possibleRows = sequence expandedRows
-  let possibleCols = sequence expandedCols
-
-  let possibleRowBoards = map fromRows possibleRows
-  let possibleColBoards = parMap rpar (boardFlip . fromRows) possibleCols
+  let expandedRows = map (`expandConstraint` exampleBoardSize) rowConstraints
+  let expandedCols = map (`expandConstraint` exampleBoardSize) columnConstraints
 
   let possibleRowCounts = product $ map length expandedRows
   let possibleColCounts = product $ map length expandedCols
@@ -27,19 +19,11 @@ main = do
   print $ map length expandedCols
   print possibleColCounts
 
-  putStrLn "Int Max Bound"
-  print (maxBound :: Int)
+  putStrLn "Common Elements in Rows"
+  mapM_ (print . commonElements . map unrow) expandedRows
 
-  let (smallerList, largerSet) =
-        if length expandedRows < length expandedCols
-          then (possibleRowBoards, Set.fromList possibleColBoards)
-          else (possibleColBoards, Set.fromList possibleRowBoards)
-  
-  putStrLn "Computing boards..."
-
-  print $ map snd $ filter fst $ parMap rpar (\board -> (board `Set.member` largerSet, board)) $ zipWith traceShow [(1 :: Int) ..] smallerList
-
-  print "Done"
+  putStrLn "Common Elements in Columns"
+  mapM_ (print . commonElements . map unrow) expandedCols
 
 {-
 exampleBoardSize :: Int

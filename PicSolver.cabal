@@ -19,7 +19,8 @@ library
   build-depends:       base >= 4.7 && < 5
                      , bv >= 0.5
                      , parallel >= 3.1
-  exposed-modules:     Board
+  exposed-modules:     Row
+                     , Util
   ghc-options:         -Wall -O2 -fprof-auto-calls -fllvm
 
 
