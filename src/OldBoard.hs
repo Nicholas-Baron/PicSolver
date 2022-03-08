@@ -1,7 +1,7 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Board where
+module OldBoard where
 
 import Control.Parallel.Strategies (parMap, rdeepseq, rpar)
 import qualified Data.BitVector as BV
