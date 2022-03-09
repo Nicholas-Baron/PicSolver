@@ -61,3 +61,11 @@ instance JSON Constraints where
     columnConstraints <- fallibleLookup "columnConstraints"
 
     return $ Constraints {boardSize, columnConstraints, rowConstraints}
+
+  showJSON Constraints {boardSize, rowConstraints, columnConstraints} =
+    JSObject $
+      toJSObject
+        [ ("boardSize", showJSON boardSize),
+          ("rowConstraints", showJSON rowConstraints),
+          ("columnConstraints", showJSON columnConstraints)
+        ]
