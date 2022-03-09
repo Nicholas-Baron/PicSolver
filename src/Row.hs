@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 module Row
   ( RowConstraint,
     expandConstraint,
@@ -5,6 +7,7 @@ module Row
     matchesConstraint,
     minRowLength,
     unrow,
+    filterByKnown,
   )
 where
 
@@ -33,6 +36,18 @@ expandConstraint constraint@(block : rest) row_length
         rows_with_block = map (MkRow . (\row -> replicate block True ++ row) . addBlank . unrow) $ expandConstraint rest (row_length - (block + 1))
         rows_without_block = [MkRow (addBlank row) | MkRow row <- expandConstraint constraint (row_length - 1)]
      in rows_with_block ++ rows_without_block
+
+filterByKnown :: [Maybe Bool] -> [Row] -> [Row]
+filterByKnown knowns = filter go
+  where
+    go :: Row -> Bool
+    go (MkRow row) =
+      all
+        ( \case
+            (_, Nothing) -> True
+            (actual, Just expected) -> actual == expected
+        )
+        $ zip row knowns
 
 -- A row matches its constraint if:
 --    1. it's constraint is <= the minRowLength of the constraint

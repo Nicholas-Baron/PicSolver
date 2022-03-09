@@ -32,8 +32,22 @@ main = do
   putStrLn "Common Elements in Cols"
   mapM_ print commonColItems
 
+  let knownMatrix = matrixUnion commonColItems commonRowItems
+      knownCols = transpose knownMatrix
+
   putStrLn "Total Known After 1 step"
-  mapM_ print $ matrixUnion commonColItems commonRowItems
+  mapM_ print knownMatrix
+
+  let newRows = zipWith filterByKnown knownMatrix expandedRows
+      newCols = zipWith filterByKnown knownCols expandedCols
+
+  putStrLn "Total Filtered Row Combinations"
+  print $ map length newRows
+  print $ product $ map length newRows
+
+  putStrLn "Total Filtered Column Combinations"
+  print $ map length newCols
+  print $ product $ map length newCols
 
 {-
 exampleBoardSize :: Int
