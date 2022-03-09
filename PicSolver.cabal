@@ -20,6 +20,7 @@ library
                      , containers >= 0.6
   exposed-modules:     Row
                      , Util
+                     , BoardKnowledge
   ghc-options:         -Wall -O2 -fprof-auto-calls -fllvm
 
 

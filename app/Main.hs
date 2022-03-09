@@ -1,7 +1,4 @@
-{-# LANGUAGE LambdaCase #-}
-
-module Main where
-
+import BoardKnowledge
 import Data.List (transpose)
 import Data.Set (Set)
 import qualified Data.Set as Set
@@ -11,28 +8,20 @@ import Util
 
 main :: IO ()
 main = do
-  let possibleRowCounts = product $ map length expandedRows
-      possibleColCounts = product $ map length expandedCols
+  let knownMatrix = fromPossibles possibleBoards
+      possibleBoards = fromConstraints exampleBoardSize rowConstraints columnConstraints
+      boardImprovements = iterateWhileDiff (improveBoardKnowledge possibleBoards) knownMatrix
+
+  let possibleRowCounts = product $ map length $ expandedRows possibleBoards
+      possibleColCounts = product $ map length $ expandedCols possibleBoards
 
   putStrLn "Total Row Combinations"
-  print $ map length expandedRows
+  print $ map length $ expandedRows possibleBoards
   print possibleRowCounts
 
   putStrLn "Total Column Combinations"
-  print $ map length expandedCols
+  print $ map length $ expandedCols possibleBoards
   print possibleColCounts
-
-  let commonRowItems = commonItems expandedRows
-      commonColItems = transpose $ commonItems expandedCols
-
-  putStrLn "Common Elements in Rows"
-  printKnowledge commonRowItems
-
-  putStrLn "Common Elements in Cols"
-  printKnowledge commonColItems
-
-  let knownMatrix = matrixUnion commonColItems commonRowItems
-      boardImprovements = iterateWhileDiff improveBoardKnowledge knownMatrix
 
   putStrLn "Improving Board knowledge"
   mapM_
@@ -41,61 +30,6 @@ main = do
         putStrLn ""
     )
     boardImprovements
-
-type BoardKnowledge = [[Maybe Bool]]
-
-data Hole = Hole
-
-commonItems :: [Set Row] -> BoardKnowledge
-commonItems expandedItems = zipWith genCommonItems expandedItems commonElemMask
-  where
-    genCommonItems :: Set Row -> [Bool] -> [Maybe Bool]
-    genCommonItems set mask = let (MkRow input : _) = Set.elems set in takeFromList mask input
-
-    commonElemMask :: [[Bool]]
-    commonElemMask = map (commonElementMask . map unrow . Set.elems) expandedItems
-
-improveBoardKnowledge :: BoardKnowledge -> BoardKnowledge
-improveBoardKnowledge rowKnowledge =
-  if any Set.null viableRows || any Set.null viableCols
-    then error $ "Found empty rows/columns: " ++ show (viableRows, viableCols)
-    else matrixUnion commonColItems commonRowItems
-  where
-    columnKnowledge = transpose rowKnowledge :: BoardKnowledge
-
-    knowledgeFilter debugStr known col =
-      let result = filterByKnown known col
-       in if Set.null result then (debugStr, showKnowledgeRow known, col, result) `traceShow` result else result
-
-    viableRows = zipWith (knowledgeFilter "row") rowKnowledge expandedRows :: [Set Row]
-    viableCols = zipWith (knowledgeFilter "col") columnKnowledge expandedCols :: [Set Row]
-
-    commonRowItems = commonItems viableRows
-    commonColItems = transpose $ commonItems viableCols
-
-showKnowledgeRow :: [Maybe Bool] -> String
-showKnowledgeRow row =
-  '[' :
-  map
-    ( \case
-        Nothing -> 'N'
-        Just False -> 'F'
-        Just True -> 'T'
-    )
-    row
-    ++ "]"
-
-printKnowledgeRow :: [Maybe Bool] -> IO ()
-printKnowledgeRow = putStrLn . showKnowledgeRow
-
-printKnowledge :: BoardKnowledge -> IO ()
-printKnowledge = mapM_ printKnowledgeRow
-
-expandedRows :: [Set Row]
-expandedRows = map (`expandConstraint` exampleBoardSize) rowConstraints
-
-expandedCols :: [Set Row]
-expandedCols = map (`expandConstraint` exampleBoardSize) columnConstraints
 
 exampleBoardSize :: Int
 exampleBoardSize = 10
