@@ -97,21 +97,9 @@ expandedRows = map (`expandConstraint` exampleBoardSize) rowConstraints
 expandedCols :: [Set Row]
 expandedCols = map (`expandConstraint` exampleBoardSize) columnConstraints
 
-{-
-exampleBoardSize :: Int
-exampleBoardSize = 15
-
-rowConstraints = [[2, 2, 4], [2, 1, 1], [4, 1, 2, 1], [1, 1, 1, 2, 1], [2, 1, 1, 2], [1, 1, 2, 1], [2, 1, 2, 2, 3], [3, 2, 1, 3], [1, 2, 1, 1, 2], [2, 1, 2, 2, 1], [1, 1, 2], [2, 3, 1], [1, 2, 1, 2, 1], [2, 1, 1], [1, 2, 1, 1]]
-
-columnConstraints = [[1, 1, 1, 1, 2], [3, 3, 1, 1, 1], [2, 1, 1], [1, 2, 4, 2], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1], [1, 5, 1, 1], [2, 3, 1, 1, 2], [1, 1, 1, 1], [2, 1, 1], [2, 1, 1, 1, 1], [1, 2, 1, 3, 1], [1, 1, 2], [1, 1, 1, 5, 1], [1, 2, 1, 1, 1]]
-
--}
-
 exampleBoardSize :: Int
 exampleBoardSize = 10
 
-rowConstraints :: [RowConstraint]
-rowConstraints = [[1, 1, 1, 1], [1, 2, 2], [2, 2, 1], [1, 1, 3, 1], [2, 1], [4, 1, 3], [2, 2], [2], [2, 3], [3]]
-
-columnConstraints :: [RowConstraint]
-columnConstraints = [[1, 2], [4, 2, 1], [1, 1], [1, 3, 1], [1, 1, 1, 1], [3, 1, 2], [2, 2, 2], [2, 1, 1], [2, 2], [1, 1, 2]]
+columnConstraints, rowConstraints :: [RowConstraint]
+rowConstraints = [[5], [2, 2, 1], [2, 3, 1], [4, 3, 1], [1, 1, 1, 1], [3, 1], [5], [1, 2, 1], [1, 1, 1], [7, 1]]
+columnConstraints = [[2], [4, 1], [2, 2, 4], [1, 2, 1, 1], [1, 1, 1, 2, 1], [4, 5], [1, 1, 2, 1], [3, 1], [], [5, 3]]
