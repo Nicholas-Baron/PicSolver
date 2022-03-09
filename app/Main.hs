@@ -22,11 +22,8 @@ main = do
   print $ map length expandedCols
   print possibleColCounts
 
-  let commonRowElems = map (commonElements . map unrow . Set.elems) expandedRows
-      commonColElems = map (commonElements . map unrow . Set.elems) expandedCols
-
-  let commonRowItems = zipWith (\(row : _) to_take -> takeFromList to_take (unrow row)) (map Set.elems expandedRows) commonRowElems
-      commonColItems = transpose $ zipWith (\(row : _) to_take -> takeFromList to_take (unrow row)) (map Set.elems expandedCols) commonColElems
+  let commonRowItems = commonItems expandedRows
+      commonColItems = transpose $ commonItems expandedCols
 
   putStrLn "Common Elements in Rows"
   printKnowledge commonRowItems
@@ -47,6 +44,17 @@ main = do
 
 type BoardKnowledge = [[Maybe Bool]]
 
+data Hole = Hole
+
+commonItems :: [Set Row] -> BoardKnowledge
+commonItems expandedItems = zipWith genCommonItems expandedItems commonElemMask
+  where
+    genCommonItems :: Set Row -> [Bool] -> [Maybe Bool]
+    genCommonItems set mask = let (MkRow input : _) = Set.elems set in takeFromList mask input
+
+    commonElemMask :: [[Bool]]
+    commonElemMask = map (commonElements . map unrow . Set.elems) expandedItems
+
 improveBoardKnowledge :: BoardKnowledge -> BoardKnowledge
 improveBoardKnowledge rowKnowledge =
   if any Set.null viableRows || any Set.null viableCols
@@ -55,30 +63,33 @@ improveBoardKnowledge rowKnowledge =
   where
     columnKnowledge = transpose rowKnowledge :: BoardKnowledge
 
-    viableRows = zipWith filterByKnown rowKnowledge expandedRows :: [Set Row]
-    viableCols = zipWith filterByKnown columnKnowledge expandedCols :: [Set Row]
+    knowledgeFilter debugStr known col =
+      let result = filterByKnown known col
+       in if Set.null result then (debugStr, showKnowledgeRow known, col, result) `traceShow` result else result
 
-    commonRowElems = map (commonElements . map unrow . Set.elems) viableRows :: [[Bool]]
-    commonColElems = map (commonElements . map unrow . Set.elems) viableCols :: [[Bool]]
+    viableRows = zipWith (knowledgeFilter "row") rowKnowledge expandedRows :: [Set Row]
+    viableCols = zipWith (knowledgeFilter "col") columnKnowledge expandedCols :: [Set Row]
 
-    commonRowItems = zipWith (\(row : _) to_take -> row `traceShow` takeFromList to_take (unrow row)) (map Set.elems expandedRows) commonRowElems :: BoardKnowledge
-    commonColItems = transpose $ zipWith (\(row : _) to_take -> takeFromList to_take (unrow row)) (map Set.elems expandedCols) commonColElems :: BoardKnowledge
+    commonRowItems = commonItems viableRows
+    commonColItems = transpose $ commonItems viableCols
+
+showKnowledgeRow :: [Maybe Bool] -> String
+showKnowledgeRow row =
+  '[' :
+  map
+    ( \case
+        Nothing -> 'N'
+        Just False -> 'F'
+        Just True -> 'T'
+    )
+    row
+    ++ "]"
+
+printKnowledgeRow :: [Maybe Bool] -> IO ()
+printKnowledgeRow = putStrLn . showKnowledgeRow
 
 printKnowledge :: BoardKnowledge -> IO ()
-printKnowledge = mapM_ go
-  where
-    go :: [Maybe Bool] -> IO ()
-    go row =
-      putStrLn $
-        '[' :
-        map
-          ( \case
-              Nothing -> 'N'
-              Just False -> 'F'
-              Just True -> 'T'
-          )
-          row
-          ++ "]"
+printKnowledge = mapM_ printKnowledgeRow
 
 expandedRows :: [Set Row]
 expandedRows = map (`expandConstraint` exampleBoardSize) rowConstraints
