@@ -1,7 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Util
-  ( commonElements,
+  ( commonElementMask,
     takeFromList,
     matrixUnion,
     iterateWhileDiff,
@@ -11,9 +11,9 @@ where
 import Control.Applicative ((<|>))
 import Data.List (foldl')
 
-commonElements :: forall a. Eq a => [[a]] -> [Bool]
-commonElements [] = []
-commonElements (x : xs) = foldl' compareElems initialValue xs
+commonElementMask :: forall a. Eq a => [[a]] -> [Bool]
+commonElementMask [] = []
+commonElementMask (x : xs) = foldl' compareElems initialValue xs
   where
     initialValue = replicate (length x) True
 

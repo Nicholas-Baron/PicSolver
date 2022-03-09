@@ -53,7 +53,7 @@ commonItems expandedItems = zipWith genCommonItems expandedItems commonElemMask
     genCommonItems set mask = let (MkRow input : _) = Set.elems set in takeFromList mask input
 
     commonElemMask :: [[Bool]]
-    commonElemMask = map (commonElements . map unrow . Set.elems) expandedItems
+    commonElemMask = map (commonElementMask . map unrow . Set.elems) expandedItems
 
 improveBoardKnowledge :: BoardKnowledge -> BoardKnowledge
 improveBoardKnowledge rowKnowledge =
