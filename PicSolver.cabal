@@ -31,6 +31,7 @@ executable pic_solver
   ghc-options:         -Wall -O2 -rtsopts -fprof-auto-calls
   build-depends:       base >= 4.7 && < 5
                      , containers >= 0.6
+                     , json >= 0.10
                      , PicSolver
 
 
