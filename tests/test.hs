@@ -6,7 +6,7 @@ import Row
 import Test.Tasty
 import qualified Test.Tasty.HUnit as HU
 import qualified Test.Tasty.QuickCheck as QC
-import Util (commonElements, takeFromList)
+import Util
 
 main :: IO ()
 main = defaultMain tests
@@ -114,5 +114,7 @@ utilTests =
                 )
                 list
                 $ takeFromList mask list
-        )
+        ),
+      QC.testProperty "iterateWhileDiff id only returns 1 item" (\(item :: Int) -> length (iterateWhileDiff id item) == 1),
+      HU.testCase "iterateWhileDiff (`div` 2) 100 == [50, 25, 12, 6, 3, 1, 0, 0]" $ iterateWhileDiff (`div` 2) 100 HU.@?= [50, 25, 12, 6, 3, 1, 0, 0]
     ]

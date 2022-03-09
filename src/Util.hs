@@ -4,6 +4,7 @@ module Util
   ( commonElements,
     takeFromList,
     matrixUnion,
+    iterateWhileDiff,
   )
 where
 
@@ -24,3 +25,8 @@ takeFromList = zipWith (\t val -> if t then Just val else Nothing)
 
 matrixUnion :: [[Maybe a]] -> [[Maybe a]] -> [[Maybe a]]
 matrixUnion = zipWith (zipWith (<|>))
+
+iterateWhileDiff :: Eq a => (a -> a) -> a -> [a]
+iterateWhileDiff func input =
+  let val = func input
+   in if val == input then [val] else val : iterateWhileDiff func val
