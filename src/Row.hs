@@ -4,14 +4,11 @@ module Row
   ( RowConstraint,
     expandConstraint,
     Row (..),
-    matchesConstraint,
-    minRowLength,
     unrow,
     filterByKnown,
   )
 where
 
-import Data.List (scanl')
 import Data.Set (Set)
 import qualified Data.Set as Set
 
@@ -51,30 +48,6 @@ filterByKnown knowns = Set.filter go
             (actual, Just expected) -> actual == expected
         )
         $ zip row knowns
-
--- A row matches its constraint if:
---    1. it's constraint is <= the minRowLength of the constraint
---    2. none of its constraint blocks are longer than the longest in the constraint
---    3. for each block in the row, the block in the row is <= a block in the same relative order in the constraint
-matchesConstraint :: Row -> RowConstraint -> Bool
-matchesConstraint row constraint = minRowLength (toConstraint row) <= minRowLength constraint
-
-toConstraint :: Row -> RowConstraint
-toConstraint (MkRow row) =
-  reduceList $
-    scanl'
-      ( \constraint block ->
-          if block
-            then constraint + 1
-            else 0
-      )
-      0
-      row
-  where
-    reduceList :: (Num a, Ord a) => [a] -> [a]
-    reduceList [] = []
-    reduceList [x] = [x | x /= 0]
-    reduceList (x : rest@(y : _)) = if x <= y then reduceList rest else x : reduceList rest
 
 type RowConstraint = [Int]
 
