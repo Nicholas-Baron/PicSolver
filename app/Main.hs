@@ -33,6 +33,9 @@ main = do
   print $ map length $ expandedCols possibleBoards
   print possibleColCounts
 
+  putStrLn "Inital Board Knowledge"
+  print knownMatrix
+
   putStrLn "Improving Board knowledge"
   mapM_
     ( \board -> do
