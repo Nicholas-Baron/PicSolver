@@ -12,6 +12,7 @@ module Row
 where
 
 import Data.List (scanl')
+import Data.Maybe (isJust)
 import Data.Set (Set)
 import qualified Data.Set as Set
 
@@ -40,8 +41,8 @@ expandConstraint constraint@(block : rest) row_length
         rows_without_block = Set.fromList [MkRow (addBlank row) | MkRow row <- Set.toList $ expandConstraint constraint (row_length - 1)]
      in rows_with_block `Set.union` rows_without_block
 
-filterByKnown :: [Maybe Bool] -> [Row] -> [Row]
-filterByKnown knowns = filter go
+filterByKnown :: [Maybe Bool] -> Set Row -> Set Row
+filterByKnown knowns = Set.filter go
   where
     go :: Row -> Bool
     go (MkRow row) =
@@ -50,7 +51,7 @@ filterByKnown knowns = filter go
             (_, Nothing) -> True
             (actual, Just expected) -> actual == expected
         )
-        $ zip row knowns
+        $ filter (isJust . snd) $ zip row knowns
 
 -- A row matches its constraint if:
 --    1. it's constraint is <= the minRowLength of the constraint
