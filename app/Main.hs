@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 module Main where
 
 import Data.List (transpose)
@@ -27,27 +29,53 @@ main = do
       commonColItems = transpose $ zipWith (\(row : _) to_take -> takeFromList to_take (unrow row)) expandedCols commonColElems
 
   putStrLn "Common Elements in Rows"
-  mapM_ print commonRowItems
+  printKnowledge commonRowItems
 
   putStrLn "Common Elements in Cols"
-  mapM_ print commonColItems
+  printKnowledge commonColItems
 
   let knownMatrix = matrixUnion commonColItems commonRowItems
-      knownCols = transpose knownMatrix
+      boardImprovements = iterateWhileDiff improveBoardKnowledge knownMatrix
 
-  putStrLn "Total Known After 1 step"
-  mapM_ print knownMatrix
+  putStrLn "Improving Board knowledge"
+  mapM_
+    ( \board -> do
+        printKnowledge board
+        putStrLn ""
+    )
+    boardImprovements
 
-  let newRows = zipWith filterByKnown knownMatrix expandedRows
-      newCols = zipWith filterByKnown knownCols expandedCols
+type BoardKnowledge = [[Maybe Bool]]
 
-  putStrLn "Total Filtered Row Combinations"
-  print $ map length newRows
-  print $ product $ map length newRows
+improveBoardKnowledge :: BoardKnowledge -> BoardKnowledge
+improveBoardKnowledge rowKnowledge = matrixUnion commonColItems commonRowItems
+  where
+    columnKnowledge = transpose rowKnowledge :: BoardKnowledge
 
-  putStrLn "Total Filtered Column Combinations"
-  print $ map length newCols
-  print $ product $ map length newCols
+    expandedRows = map (`expandConstraint` exampleBoardSize) rowConstraints :: [[Row]]
+    expandedCols = map (`expandConstraint` exampleBoardSize) columnConstraints :: [[Row]]
+
+    commonRowElems = map (commonElements . map unrow) $ zipWith filterByKnown rowKnowledge expandedRows :: [[Bool]]
+    commonColElems = map (commonElements . map unrow) $ zipWith filterByKnown columnKnowledge expandedCols :: [[Bool]]
+
+    commonRowItems = zipWith (\(row : _) to_take -> takeFromList to_take (unrow row)) expandedRows commonRowElems :: BoardKnowledge
+    commonColItems = transpose $ zipWith (\(row : _) to_take -> takeFromList to_take (unrow row)) expandedCols commonColElems :: BoardKnowledge
+
+printKnowledge :: BoardKnowledge -> IO ()
+printKnowledge = mapM_ go
+  where
+    go :: [Maybe Bool] -> IO ()
+    go row =
+      putStrLn $
+        '[' :
+        map
+          ( \case
+              Nothing -> 'N'
+              Just False -> 'F'
+              Just True -> 'T'
+          )
+          row
+          ++ "]"
 
 {-
 exampleBoardSize :: Int
