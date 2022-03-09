@@ -12,7 +12,6 @@ module Row
 where
 
 import Data.List (scanl')
-import Data.Maybe (isJust)
 import Data.Set (Set)
 import qualified Data.Set as Set
 
@@ -51,7 +50,7 @@ filterByKnown knowns = Set.filter go
             (_, Nothing) -> True
             (actual, Just expected) -> actual == expected
         )
-        $ filter (isJust . snd) $ zip row knowns
+        $ zip row knowns
 
 -- A row matches its constraint if:
 --    1. it's constraint is <= the minRowLength of the constraint
