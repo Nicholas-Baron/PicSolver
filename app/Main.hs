@@ -6,7 +6,7 @@ import Data.List (transpose)
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Debug.Trace (traceShow)
-import Row
+import Row (Row (MkRow), RowConstraint, expandConstraint, filterByKnown, unrow)
 import Util
 
 main :: IO ()
