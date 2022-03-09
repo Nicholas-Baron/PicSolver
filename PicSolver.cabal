@@ -43,4 +43,5 @@ test-suite test
                      , tasty >= 0.7
                      , tasty-hunit >= 0.10
                      , tasty-quickcheck >= 0.10
+                     , containers >= 0.6
                      , PicSolver

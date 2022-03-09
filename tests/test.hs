@@ -2,6 +2,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
+import qualified Data.Set as Set
 import Row
 import Test.Tasty
 import qualified Test.Tasty.HUnit as HU
@@ -24,20 +25,21 @@ expandConstraintProperties =
     [ HU.testCase "expandConstraint with blocks of 1" $
         HU.assertEqual
           "expandConstraint handles blocks of size 1"
-          ( map
-              MkRow
-              [ [True, False, False, False, False],
-                [False, True, False, False, False],
-                [False, False, True, False, False],
-                [False, False, False, True, False],
-                [False, False, False, False, True]
-              ]
+          ( Set.fromList $
+              map
+                MkRow
+                [ [True, False, False, False, False],
+                  [False, True, False, False, False],
+                  [False, False, True, False, False],
+                  [False, False, False, True, False],
+                  [False, False, False, False, True]
+                ]
           )
           (expandConstraint [1] 5),
       HU.testCase "expandConstraint base case" $
         HU.assertEqual
           "expandConstraint handles blocks of size 4"
-          ( map
+          (Set.fromList$ map
               MkRow
               [ [True, True, True, True, False],
                 [False, True, True, True, True]
@@ -55,7 +57,7 @@ expandConstraintProperties =
                     [ \row -> QC.property $ row `matchesConstraint` constraint,
                       \(MkRow row) -> length row QC.=== row_length
                     ]
-             in QC.conjoin [predicate row | predicate <- predicates, row <- expandedConstraints]
+             in QC.conjoin [predicate row | predicate <- predicates, row <- Set.elems expandedConstraints]
         )
     ]
 
