@@ -5,6 +5,7 @@ module Main where
 import Data.List (transpose)
 import Data.Set (Set)
 import qualified Data.Set as Set
+import Debug.Trace (traceShow)
 import Row
 import Util
 
@@ -47,14 +48,20 @@ main = do
 type BoardKnowledge = [[Maybe Bool]]
 
 improveBoardKnowledge :: BoardKnowledge -> BoardKnowledge
-improveBoardKnowledge rowKnowledge = matrixUnion commonColItems commonRowItems
+improveBoardKnowledge rowKnowledge =
+  if any Set.null viableRows || any Set.null viableCols
+    then error $ "Found empty rows/columns: " ++ show (viableRows, viableCols)
+    else matrixUnion commonColItems commonRowItems
   where
     columnKnowledge = transpose rowKnowledge :: BoardKnowledge
 
-    commonRowElems = map (commonElements . map unrow) $ zipWith filterByKnown rowKnowledge $ map Set.elems expandedRows :: [[Bool]]
-    commonColElems = map (commonElements . map unrow) $ zipWith filterByKnown columnKnowledge $ map Set.elems expandedCols :: [[Bool]]
+    viableRows = zipWith filterByKnown rowKnowledge expandedRows :: [Set Row]
+    viableCols = zipWith filterByKnown columnKnowledge expandedCols :: [Set Row]
 
-    commonRowItems = zipWith (\(row : _) to_take -> takeFromList to_take (unrow row)) (map Set.elems expandedRows) commonRowElems :: BoardKnowledge
+    commonRowElems = map (commonElements . map unrow . Set.elems) viableRows :: [[Bool]]
+    commonColElems = map (commonElements . map unrow . Set.elems) viableCols :: [[Bool]]
+
+    commonRowItems = zipWith (\(row : _) to_take -> row `traceShow` takeFromList to_take (unrow row)) (map Set.elems expandedRows) commonRowElems :: BoardKnowledge
     commonColItems = transpose $ zipWith (\(row : _) to_take -> takeFromList to_take (unrow row)) (map Set.elems expandedCols) commonColElems :: BoardKnowledge
 
 printKnowledge :: BoardKnowledge -> IO ()
