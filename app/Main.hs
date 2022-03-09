@@ -3,6 +3,8 @@
 module Main where
 
 import Data.List (transpose)
+import Data.Set (Set)
+import qualified Data.Set as Set
 import Row
 import Util
 
@@ -19,11 +21,11 @@ main = do
   print $ map length expandedCols
   print possibleColCounts
 
-  let commonRowElems = map (commonElements . map unrow) expandedRows
-      commonColElems = map (commonElements . map unrow) expandedCols
+  let commonRowElems = map (commonElements . map unrow . Set.elems) expandedRows
+      commonColElems = map (commonElements . map unrow . Set.elems) expandedCols
 
-  let commonRowItems = zipWith (\(row : _) to_take -> takeFromList to_take (unrow row)) expandedRows commonRowElems
-      commonColItems = transpose $ zipWith (\(row : _) to_take -> takeFromList to_take (unrow row)) expandedCols commonColElems
+  let commonRowItems = zipWith (\(row : _) to_take -> takeFromList to_take (unrow row)) (map Set.elems expandedRows) commonRowElems
+      commonColItems = transpose $ zipWith (\(row : _) to_take -> takeFromList to_take (unrow row)) (map Set.elems expandedCols) commonColElems
 
   putStrLn "Common Elements in Rows"
   printKnowledge commonRowItems
@@ -49,11 +51,11 @@ improveBoardKnowledge rowKnowledge = matrixUnion commonColItems commonRowItems
   where
     columnKnowledge = transpose rowKnowledge :: BoardKnowledge
 
-    commonRowElems = map (commonElements . map unrow) $ zipWith filterByKnown rowKnowledge expandedRows :: [[Bool]]
-    commonColElems = map (commonElements . map unrow) $ zipWith filterByKnown columnKnowledge expandedCols :: [[Bool]]
+    commonRowElems = map (commonElements . map unrow) $ zipWith filterByKnown rowKnowledge $ map Set.elems expandedRows :: [[Bool]]
+    commonColElems = map (commonElements . map unrow) $ zipWith filterByKnown columnKnowledge $ map Set.elems expandedCols :: [[Bool]]
 
-    commonRowItems = zipWith (\(row : _) to_take -> takeFromList to_take (unrow row)) expandedRows commonRowElems :: BoardKnowledge
-    commonColItems = transpose $ zipWith (\(row : _) to_take -> takeFromList to_take (unrow row)) expandedCols commonColElems :: BoardKnowledge
+    commonRowItems = zipWith (\(row : _) to_take -> takeFromList to_take (unrow row)) (map Set.elems expandedRows) commonRowElems :: BoardKnowledge
+    commonColItems = transpose $ zipWith (\(row : _) to_take -> takeFromList to_take (unrow row)) (map Set.elems expandedCols) commonColElems :: BoardKnowledge
 
 printKnowledge :: BoardKnowledge -> IO ()
 printKnowledge = mapM_ go
@@ -71,10 +73,10 @@ printKnowledge = mapM_ go
           row
           ++ "]"
 
-expandedRows :: [[Row]]
+expandedRows :: [Set Row]
 expandedRows = map (`expandConstraint` exampleBoardSize) rowConstraints
 
-expandedCols :: [[Row]]
+expandedCols :: [Set Row]
 expandedCols = map (`expandConstraint` exampleBoardSize) columnConstraints
 
 {-

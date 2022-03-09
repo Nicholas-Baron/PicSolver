@@ -12,6 +12,8 @@ module Row
 where
 
 import Data.List (scanl')
+import Data.Set (Set)
+import qualified Data.Set as Set
 
 newtype Row = MkRow [Bool]
   deriving (Eq, Ord)
@@ -23,19 +25,20 @@ instance Show Row where
   show (MkRow row) = '[' : map (\val -> if val then 'T' else 'F') row ++ "]"
 
 -- Expands the constraint to cover all possible rows of the given length
-expandConstraint :: RowConstraint -> Int -> [Row]
-expandConstraint [] row_length = map MkRow [replicate row_length False]
+expandConstraint :: RowConstraint -> Int -> Set Row
+expandConstraint [] row_length = Set.fromList $ map MkRow [replicate row_length False]
 expandConstraint constraint@(block : rest) row_length
-  | minRowLength constraint > row_length = []
+  | minRowLength constraint > row_length = Set.empty
   | null rest && block <= row_length =
-    map
-      (\index -> MkRow $ replicate index False ++ replicate block True ++ replicate (row_length - (index + block)) False)
-      [0 .. (row_length - block)]
+    Set.fromList $
+      map
+        (\index -> MkRow $ replicate index False ++ replicate block True ++ replicate (row_length - (index + block)) False)
+        [0 .. (row_length - block)]
   | otherwise =
     let addBlank = (:) False
-        rows_with_block = map (MkRow . (\row -> replicate block True ++ row) . addBlank . unrow) $ expandConstraint rest (row_length - (block + 1))
-        rows_without_block = [MkRow (addBlank row) | MkRow row <- expandConstraint constraint (row_length - 1)]
-     in rows_with_block ++ rows_without_block
+        rows_with_block = Set.map (MkRow . (\row -> replicate block True ++ row) . addBlank . unrow) $ expandConstraint rest (row_length - (block + 1))
+        rows_without_block = Set.fromList [MkRow (addBlank row) | MkRow row <- Set.toList $ expandConstraint constraint (row_length - 1)]
+     in rows_with_block `Set.union` rows_without_block
 
 filterByKnown :: [Maybe Bool] -> [Row] -> [Row]
 filterByKnown knowns = filter go
