@@ -6,7 +6,6 @@ module BoardKnowledge
     PossibleBoards (..),
     commonItems,
     improveBoardKnowledge,
-    printKnowledge,
     fromConstraints,
     fromPossibles,
   )
@@ -19,22 +18,43 @@ import Debug.Trace
 import Row
 import Util
 
-type BoardKnowledge = [[Maybe Bool]]
+newtype BoardKnowledge = MkBoardKnowledge [[Maybe Bool]]
+  deriving (Eq)
+
+instance Show BoardKnowledge where
+  show (MkBoardKnowledge input) = unlines $ map showKnowledgeRow input
+    where
+      showKnowledgeRow :: [Maybe Bool] -> String
+      showKnowledgeRow row = '[' : map (\case Nothing -> 'N'; Just False -> 'F'; Just True -> 'T') row ++ "]"
+
+transposeKnowledge :: BoardKnowledge -> BoardKnowledge
+transposeKnowledge (MkBoardKnowledge board) = MkBoardKnowledge (transpose board)
+
+fromUnion :: BoardKnowledge -> BoardKnowledge -> BoardKnowledge
+fromUnion (MkBoardKnowledge lhs) (MkBoardKnowledge rhs) = MkBoardKnowledge (matrixUnion lhs rhs)
 
 fromPossibles :: PossibleBoards -> BoardKnowledge
-fromPossibles PossibleBoards {expandedCols, expandedRows} = matrixUnion columnKnowledge rowKnowledge
+fromPossibles PossibleBoards {expandedCols, expandedRows} = fromUnion columnKnowledge rowKnowledge
   where
-    columnKnowledge = transpose $ commonItems expandedCols
+    columnKnowledge = transposeKnowledge $ commonItems expandedCols
     rowKnowledge = commonItems expandedRows
 
 commonItems :: [Set Row] -> BoardKnowledge
-commonItems expandedItems = zipWith genCommonItems expandedItems commonElemMask
+commonItems expandedItems = MkBoardKnowledge $ zipWith genCommonItems expandedItems commonElemMask
   where
     genCommonItems :: Set Row -> [Bool] -> [Maybe Bool]
     genCommonItems set mask = let (MkRow input : _) = Set.elems set in takeFromList mask input
 
     commonElemMask :: [[Bool]]
     commonElemMask = map (commonElementMask . map unrow . Set.elems) expandedItems
+
+filterRowSet :: BoardKnowledge -> [Set Row] -> [Set Row]
+filterRowSet (MkBoardKnowledge knowledge) = zipWith knowledgeFilter knowledge
+  where
+    knowledgeFilter :: [Maybe Bool] -> Set Row -> Set Row
+    knowledgeFilter known col =
+      let result = filterByKnown known col
+       in if Set.null result then (show known, col, result) `traceShow` result else result
 
 data PossibleBoards = PossibleBoards
   { expandedCols :: [Set Row],
@@ -52,34 +72,12 @@ improveBoardKnowledge :: PossibleBoards -> BoardKnowledge -> BoardKnowledge
 improveBoardKnowledge PossibleBoards {expandedCols, expandedRows} rowKnowledge =
   if any Set.null viableRows || any Set.null viableCols
     then error $ "Found empty rows/columns: " ++ show (viableRows, viableCols)
-    else matrixUnion commonColItems commonRowItems
+    else fromUnion commonColItems commonRowItems
   where
-    columnKnowledge = transpose rowKnowledge :: BoardKnowledge
+    columnKnowledge = transposeKnowledge rowKnowledge :: BoardKnowledge
 
-    knowledgeFilter debugStr known col =
-      let result = filterByKnown known col
-       in if Set.null result then (debugStr, showKnowledgeRow known, col, result) `traceShow` result else result
-
-    viableRows = zipWith (knowledgeFilter "row") rowKnowledge expandedRows :: [Set Row]
-    viableCols = zipWith (knowledgeFilter "col") columnKnowledge expandedCols :: [Set Row]
+    viableRows = filterRowSet rowKnowledge expandedRows :: [Set Row]
+    viableCols = filterRowSet columnKnowledge expandedCols :: [Set Row]
 
     commonRowItems = commonItems viableRows
-    commonColItems = transpose $ commonItems viableCols
-
-showKnowledgeRow :: [Maybe Bool] -> String
-showKnowledgeRow row =
-  '[' :
-  map
-    ( \case
-        Nothing -> 'N'
-        Just False -> 'F'
-        Just True -> 'T'
-    )
-    row
-    ++ "]"
-
-printKnowledgeRow :: [Maybe Bool] -> IO ()
-printKnowledgeRow = putStrLn . showKnowledgeRow
-
-printKnowledge :: BoardKnowledge -> IO ()
-printKnowledge = mapM_ printKnowledgeRow
+    commonColItems = transposeKnowledge $ commonItems viableCols

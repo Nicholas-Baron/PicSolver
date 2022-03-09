@@ -1,9 +1,5 @@
 import BoardKnowledge
-import Data.List (transpose)
-import Data.Set (Set)
-import qualified Data.Set as Set
-import Debug.Trace (traceShow)
-import Row (Row (MkRow), RowConstraint, expandConstraint, filterByKnown, unrow)
+import Row (RowConstraint)
 import Util
 
 main :: IO ()
@@ -26,7 +22,7 @@ main = do
   putStrLn "Improving Board knowledge"
   mapM_
     ( \board -> do
-        printKnowledge board
+        print board
         putStrLn ""
     )
     boardImprovements
