@@ -8,9 +8,6 @@ import Util
 
 main :: IO ()
 main = do
-  let expandedRows = map (`expandConstraint` exampleBoardSize) rowConstraints
-      expandedCols = map (`expandConstraint` exampleBoardSize) columnConstraints
-
   let possibleRowCounts = product $ map length expandedRows
       possibleColCounts = product $ map length expandedCols
 
@@ -52,9 +49,6 @@ improveBoardKnowledge rowKnowledge = matrixUnion commonColItems commonRowItems
   where
     columnKnowledge = transpose rowKnowledge :: BoardKnowledge
 
-    expandedRows = map (`expandConstraint` exampleBoardSize) rowConstraints :: [[Row]]
-    expandedCols = map (`expandConstraint` exampleBoardSize) columnConstraints :: [[Row]]
-
     commonRowElems = map (commonElements . map unrow) $ zipWith filterByKnown rowKnowledge expandedRows :: [[Bool]]
     commonColElems = map (commonElements . map unrow) $ zipWith filterByKnown columnKnowledge expandedCols :: [[Bool]]
 
@@ -76,6 +70,12 @@ printKnowledge = mapM_ go
           )
           row
           ++ "]"
+
+expandedRows :: [[Row]]
+expandedRows = map (`expandConstraint` exampleBoardSize) rowConstraints
+
+expandedCols :: [[Row]]
+expandedCols = map (`expandConstraint` exampleBoardSize) columnConstraints
 
 {-
 exampleBoardSize :: Int
