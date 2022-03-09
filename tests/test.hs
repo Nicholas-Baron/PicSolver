@@ -39,13 +39,32 @@ expandConstraintProperties =
       HU.testCase "expandConstraint base case" $
         HU.assertEqual
           "expandConstraint handles blocks of size 4"
-          (Set.fromList$ map
-              MkRow
-              [ [True, True, True, True, False],
-                [False, True, True, True, True]
-              ]
+          ( Set.fromList $
+              map
+                MkRow
+                [ [True, True, True, True, False],
+                  [False, True, True, True, True]
+                ]
           )
           (expandConstraint [4] 5),
+      HU.testCase "filterByKnown pt. 1" $
+        HU.assertEqual
+          "filterByKnown will ignore Nothing"
+          ( Set.fromList $
+              map
+                MkRow
+                [ [True, True, True, True, False],
+                  [False, True, True, True, True]
+                ]
+          )
+          (filterByKnown (replicate 5 Nothing) $ expandConstraint [4] 5),
+      HU.testCase "filterByKnown pt. 2" $
+        HU.assertEqual
+          "filterByKnown will match Justs"
+          ( Set.singleton $
+              MkRow [True, True, True, True, False]
+          )
+          (filterByKnown (Just True : replicate 4 Nothing) $ expandConstraint [4] 5),
       QC.testProperty
         "all rows match the constraint they expanded from"
         ( \(MkTestConstraint (constraint, row_length)) ->
