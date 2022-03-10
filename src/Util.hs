@@ -28,5 +28,6 @@ matrixUnion = zipWith (zipWith (<|>))
 
 iterateWhileDiff :: Eq a => (a -> a) -> a -> [a]
 iterateWhileDiff func input =
+  input :
   let val = func input
-   in if val == input then [val] else val : iterateWhileDiff func val
+   in if val == input then [val] else iterateWhileDiff func val

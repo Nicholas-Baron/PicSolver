@@ -134,6 +134,6 @@ utilTests =
                 list
                 $ takeFromList mask list
         ),
-      QC.testProperty "iterateWhileDiff id only returns 1 item" (\(item :: Int) -> length (iterateWhileDiff id item) == 1),
-      HU.testCase "iterateWhileDiff (`div` 2) 100 == [50, 25, 12, 6, 3, 1, 0, 0]" $ iterateWhileDiff (`div` 2) 100 HU.@?= [50, 25, 12, 6, 3, 1, 0, 0]
+      QC.testProperty "iterateWhileDiff id only returns 2 items" (\(item :: Int) -> length (iterateWhileDiff id item) == 2),
+      HU.testCase "iterateWhileDiff (`div` 2) 100 == [100, 50, 25, 12, 6, 3, 1, 0, 0]" $ iterateWhileDiff (`div` 2) 100 HU.@?= [100, 50, 25, 12, 6, 3, 1, 0, 0]
     ]
