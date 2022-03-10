@@ -73,9 +73,7 @@ expandConstraintProperties =
                 predicates =
                   map
                     (\predicate row -> QC.counterexample (show (row, constraint, row_length)) (predicate row))
-                    [ \row -> QC.property $ row `matchesConstraint` constraint,
-                      \(MkRow row) -> length row QC.=== row_length
-                    ]
+                    [ \(MkRow row) -> length row QC.=== row_length ]
              in QC.conjoin [predicate row | predicate <- predicates, row <- Set.elems expandedConstraints]
         )
     ]
@@ -98,13 +96,13 @@ utilTests :: TestTree
 utilTests =
   testGroup
     "Utility Tests"
-    [ HU.testCase "commonElements of [] is []" (commonElements ([] :: [[Int]]) HU.@?= []),
+    [ HU.testCase "commonElementMask of [] is []" (commonElementMask ([] :: [[Int]]) HU.@?= []),
       QC.testProperty
-        "commonElements of the same list should all be equal"
-        (\(list :: [Int]) -> and $ commonElements $ replicate 5 list),
+        "commonElementMask of the same list should all be equal"
+        (\(list :: [Int]) -> and $ commonElementMask $ replicate 5 list),
       HU.testCase
-        "commonElements of [[1,2,3], [3,2,1], [2,2,2]] is [False,True,False]"
-        (commonElements [[1, 2, 3], [3, 2, 1], [2, 2, 2]] HU.@?= [False, True, False]),
+        "commonElementMask of [[1,2,3], [3,2,1], [2,2,2]] is [False,True,False]"
+        (commonElementMask [[1, 2, 3], [3, 2, 1], [2, 2, 2]] HU.@?= [False, True, False]),
       QC.testProperty
         "takeFromList will have the length of the shorter list"
         ( \(list :: [Int], mask) ->

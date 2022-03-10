@@ -6,6 +6,7 @@ module Row
     Row (..),
     unrow,
     filterByKnown,
+    minRowLength,
   )
 where
 
