@@ -39,6 +39,7 @@ main = do
   putStrLn "Improving Board knowledge"
   mapM_
     ( \board -> do
+        putStrLn $ show (100 * completeness board) ++ "% complete"
         print board
         putStrLn ""
     )

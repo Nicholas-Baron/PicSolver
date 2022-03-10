@@ -8,13 +8,17 @@ module BoardKnowledge
     improveBoardKnowledge,
     fromConstraints,
     fromPossibles,
+    completeness,
   )
 where
 
 import Data.List (transpose)
+import Data.Maybe (isJust)
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Debug.Trace
+import GHC.Float (int2Float)
+import GHC.List (foldl1')
 import Row
 import Util
 
@@ -47,6 +51,15 @@ commonItems expandedItems = MkBoardKnowledge $ zipWith genCommonItems expandedIt
 
     commonElemMask :: [[Bool]]
     commonElemMask = map (commonElementMask . map unrow . Set.elems) expandedItems
+
+completeness :: BoardKnowledge -> Float
+completeness (MkBoardKnowledge board) = let (totalFound, totalSize) = foldl1' (\(l1, r1) (l2, r2) -> (l1 + l2, r1 + r2)) $ map rowStats board in int2Float totalFound / int2Float totalSize
+  where
+    rowStats :: [Maybe Bool] -> (Int, Int)
+    rowStats row =
+      let total = length row
+          known = length $ filter isJust row
+       in (known, total)
 
 filterRowSet :: BoardKnowledge -> [Set Row] -> [Set Row]
 filterRowSet (MkBoardKnowledge knowledge) = zipWith knowledgeFilter knowledge
