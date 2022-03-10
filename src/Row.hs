@@ -29,13 +29,15 @@ expandConstraint constraint@(block : rest) row_length
   | null rest && block <= row_length =
     Set.fromList $
       map
-        (\index -> MkRow $ replicate index False ++ replicate block True ++ replicate (row_length - (index + block)) False)
+        (\index -> MkRow $ replicate index False ++ addBlock (replicate (row_length - (index + block)) False))
         [0 .. (row_length - block)]
   | otherwise =
     let addBlank = (:) False
-        rows_with_block = Set.map (MkRow . (\row -> replicate block True ++ row) . addBlank . unrow) $ expandConstraint rest (row_length - (block + 1))
+        rows_with_block = Set.map (MkRow . addBlock . addBlank . unrow) $ expandConstraint rest (row_length - (block + 1))
         rows_without_block = Set.fromList [MkRow (addBlank row) | MkRow row <- Set.toList $ expandConstraint constraint (row_length - 1)]
      in rows_with_block `Set.union` rows_without_block
+  where
+    addBlock row = replicate block True ++ row
 
 filterByKnown :: [Maybe Bool] -> Set Row -> Set Row
 filterByKnown knowns = Set.filter go
