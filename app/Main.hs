@@ -44,6 +44,10 @@ main = do
     )
     boardImprovements
 
+  putStr "Solved in "
+  putStr $ show (length boardImprovements + 1)
+  putStrLn " steps"
+
 data Constraints = Constraints
   { boardSize :: Int,
     columnConstraints :: [RowConstraint],
