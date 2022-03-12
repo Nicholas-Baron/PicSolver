@@ -56,4 +56,5 @@ filterByKnown knowns = Set.filter go
 type RowConstraint = [Int]
 
 minRowLength :: RowConstraint -> Int
+minRowLength [] = 0
 minRowLength row = sum row + length row - 1

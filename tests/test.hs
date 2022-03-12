@@ -16,7 +16,12 @@ tests :: TestTree
 tests = testGroup "Tests" [utilTests, rowTests]
 
 rowTests :: TestTree
-rowTests = testGroup "Row Tests" [expandConstraintProperties]
+rowTests =
+  testGroup
+    "Row Tests"
+    [ expandConstraintProperties,
+      HU.testCase "minRowLength base case" $ HU.assertEqual "minRowLength of [] should be 0" 0 (minRowLength [])
+    ]
 
 expandConstraintProperties :: TestTree
 expandConstraintProperties =
