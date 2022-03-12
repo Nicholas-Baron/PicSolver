@@ -2,7 +2,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 import BoardKnowledge
-import Row (RowConstraint)
+import Row (RowConstraint, minRowLength)
 import System.Environment (getArgs)
 import System.Exit (die)
 import Text.JSON
@@ -63,10 +63,18 @@ instance JSON Constraints where
     let fallibleLookup name = case lookup name object of
           Nothing -> Error ("Could not find " ++ name ++ " in " ++ show object)
           Just x -> readJSON x
+        validate :: (Show a) => String -> (a -> Bool) -> a -> Result a
+        validate msg predicate value =
+          if predicate value
+            then Ok value
+            else Error $ msg ++ " : " ++ show value
 
-    boardSize <- fallibleLookup "boardSize"
-    rowConstraints <- fallibleLookup "rowConstraints"
-    columnConstraints <- fallibleLookup "columnConstraints"
+    boardSize <- fallibleLookup "boardSize" >>= validate "Board size must be positive" (> 0)
+
+    let fitConstraints = all ((<= boardSize) . minRowLength)
+
+    rowConstraints <- fallibleLookup "rowConstraints" >>= validate "Rows must fit in the specified size" fitConstraints
+    columnConstraints <- fallibleLookup "columnConstraints" >>= validate "Columns must fit in the specified size" fitConstraints
 
     return $ Constraints {boardSize, columnConstraints, rowConstraints}
 
