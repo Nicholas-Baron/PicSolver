@@ -74,12 +74,9 @@ expandConstraintProperties =
         "all rows match the constraint they expanded from"
         ( \(MkTestConstraint (constraint, row_length)) ->
             let expandedConstraints = expandConstraint constraint row_length
-                predicates :: [Row.Row -> QC.Property]
-                predicates =
-                  map
-                    (\predicate row -> QC.counterexample (show (row, constraint, row_length)) (predicate row))
-                    [ \(MkRow row) -> length row QC.=== row_length ]
-             in QC.conjoin [predicate row | predicate <- predicates, row <- Set.elems expandedConstraints]
+                predicate :: Row.Row -> QC.Property
+                predicate (MkRow row) = QC.counterexample (show (row, constraint, row_length)) (length row QC.=== row_length)
+             in QC.conjoin [predicate row | row <- Set.elems expandedConstraints]
         )
     ]
 
